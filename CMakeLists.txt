@@ -15,7 +15,7 @@ set(CMAKE_C_FLAGS "-ffreestanding -O2 -Wall -Wextra")
 
 include_directories(includes)
 
-add_executable(kernel.elf src/boot.s src/kernel.c src/uart.c src/printf.c)
+add_executable(kernel.elf src/boot.s src/kernel.c src/uart.c src/printf.c src/exc.c src/exc.s)
 
 add_custom_target(kernel8.img ALL
         DEPENDS kernel.elf kernel8.img

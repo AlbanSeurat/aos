@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include "uart.h"
 #include "printf.h"
+#include "exc.h"
 
 #if defined(__cplusplus)
 extern "C" /* Use C linkage for kernel_main. */
@@ -23,5 +24,8 @@ void main(uint32_t r0, uint32_t r1, uint32_t atags)
 
     printf("Current EL is: %x\n", (el>>2)&3);
 
+    exceptions_init();
+
+    printf("Exception set\n");
 
 }

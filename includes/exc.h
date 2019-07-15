@@ -1,0 +1,1 @@
+void exceptions_init();
