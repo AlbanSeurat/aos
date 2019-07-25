@@ -49,7 +49,7 @@ enum flags {
     PAD_RIGHT	= 2,
 };
 
-static int prints(char **out, const char *string, int width, int flags)
+static int kprints(char **out, const char *string, int width, int flags)
 {
     int pc = 0, padchar = ' ';
 
@@ -92,7 +92,7 @@ static int simple_outputi(char **out, long long i, int base, int sign, int width
     if (i == 0) {
         print_buf[0] = '0';
         print_buf[1] = '\0';
-        return prints(out, print_buf, width, flags);
+        return kprints(out, print_buf, width, flags);
     }
 
     if (sign && base == 10 && i < 0) {
@@ -122,7 +122,7 @@ static int simple_outputi(char **out, long long i, int base, int sign, int width
         }
     }
 
-    return pc + prints (out, s, width, flags);
+    return pc + kprints(out, s, width, flags);
 }
 
 
@@ -192,17 +192,20 @@ static int simple_vsprintf(char **out, char *format, va_list ap)
                     u.u = va_arg(ap, unsigned int);
                     pc += simple_outputi(out, u.u, 16, 0, width, flags, 'A');
                     break;
-
+                case('b'):
+                    u.u = va_arg(ap, unsigned int);
+                    pc += simple_outputi(out, u.u, 2, 0, width, flags, 'a');
+                    break;
                 case('c'):
                     u.c = va_arg(ap, int);
                     scr[0] = u.c;
                     scr[1] = '\0';
-                    pc += prints(out, scr, width, flags);
+                    pc += kprints(out, scr, width, flags);
                     break;
 
                 case('s'):
                     u.s = va_arg(ap, char *);
-                    pc += prints(out, u.s ? u.s : "(null)", width, flags);
+                    pc += kprints(out, u.s ? u.s : "(null)", width, flags);
                     break;
                 case('l'):
                     ++format;
@@ -326,7 +329,7 @@ static int simple_vsprintf(char **out, char *format, va_list ap)
     return pc;
 }
 
-int printf(char *fmt, ...)
+int kprintf(char *fmt, ...)
 {
     va_list ap;
     int r;
@@ -338,7 +341,7 @@ int printf(char *fmt, ...)
     return r;
 }
 
-int sprintf(char *buf, char *fmt, ...)
+int ksprintf(char *buf, char *fmt, ...)
 {
     va_list ap;
     int r;

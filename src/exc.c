@@ -1,18 +1,38 @@
 #include <stddef.h>
 #include <stdint.h>
-#include <printf.h>
+#include <util.h>
+#include "kprintf.h"
+#include "timer.h"
 
 extern uint32_t exception_vector[];
 
+#define CORE0_IRQ_SOURCE    0x40000060
+
 void exceptions_init(void) {
-    asm volatile("msr vbar_el2, %[base]" :: [base] "r" (exception_vector));
+    asm volatile("msr vbar_el1, %[base]" :: [base] "r" (exception_vector));
 }
 
-void handler_exception() {
+void enable_irq() {
+    asm volatile("msr daifclr,#2");
+}
 
+void disable_irq() {
+    asm volatile("msr daifset,#2");
+}
+
+void c_irq_handler() {
+    disable_irq();
+
+    int irq_source =  mmio_read(CORE0_IRQ_SOURCE);
+    kprintf("IRQ source : %x\n", irq_source);
+    if(irq_source & 0x08) {
+        irq_tick_timer();
+    }
+    enable_irq();
 }
 
 void hang() {
-    printf("panic\n");
-    asm volatile("wfe");
+    kprintf("panic\n");
+    wfe: asm volatile("wfe");
+    goto wfe;
 }
