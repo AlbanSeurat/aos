@@ -4,7 +4,7 @@
 #include "uart.h"
 #include "kprintf.h"
 
-#define CORE0_TIMER_IRQCNTL 0x40000040
+#define CORE0_TIMER_IRQCNTL (void*)0x40000040
 
 void timer_init() {
 

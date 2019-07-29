@@ -6,7 +6,7 @@
 
 extern uint32_t exception_vector[];
 
-#define CORE0_IRQ_SOURCE    0x40000060
+#define CORE0_IRQ_SOURCE    (void*)0x40000060
 
 void exceptions_init(void) {
     asm volatile("msr vbar_el1, %[base]" :: [base] "r" (exception_vector));
@@ -24,7 +24,6 @@ void c_irq_handler() {
     disable_irq();
 
     int irq_source =  mmio_read(CORE0_IRQ_SOURCE);
-    kprintf("IRQ source : %x\n", irq_source);
     if(irq_source & 0x08) {
         irq_tick_timer();
     }
