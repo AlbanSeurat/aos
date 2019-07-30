@@ -15,8 +15,7 @@ set(CMAKE_C_FLAGS "-ffreestanding -o2 -march=armv8-a+nofp -Wall -Wextra")
 
 include_directories(boot/includes)
 
-add_executable(kernel.elf boot/src/boot.s boot/src/kernel.c boot/src/io/uart.c boot/src/mmu.c
-        boot/src/util/kprintf.c boot/src/io/exc.c boot/src/io/exc.s boot/src/io/timer.c)
+add_executable(kernel.elf boot/src/boot.s boot/src/boot.c boot/src/io/uart.c)
 
 add_custom_target(kernel8.img ALL
         DEPENDS kernel.elf kernel8.img

@@ -14,8 +14,6 @@
 
 #define PAGE_SIZE   		4096
 #define PTRS_PER_TABLE		512ULL // nb adress per MMU tables (PGD, PUD, PMD, ...)
-// section is 2Mb (to ease things for now, non kernel memory will be probably map differently)
-#define SECTION_SIZE		(2*1024*1024)
 
 #define MT_NORMAL_NC			0x1 // index to
 
@@ -71,6 +69,7 @@ static inline void create_block_map(void * table, uint64_t phys, uint64_t flags,
         asm("str %0, [%1, %2, lsl #3]" :: "r" (final), "r" (table), "r" (offset));
         offset++;
         final+= SECTION_SIZE;
+        // section is 2Mb (to ease things for now, non kernel memory will be probably map differently)
     } while(offset <= offset_end);
 }
 
