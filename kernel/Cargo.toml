@@ -1,0 +1,14 @@
+[package]
+name = "aos-kernel"
+version = "0.1.0"
+authors = ["Alban Seurat <alban.seurat@me.com>"]
+edition = "2018"
+
+[dependencies]
+panic-abort = "0.3.1"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"

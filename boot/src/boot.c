@@ -11,7 +11,7 @@ char * kernel = DEVICE_BASE - SECTION_SIZE;
 
 void main()
 {
-    uint32_t size = 500, i = 0;
+    uint32_t size = 8, i = 0;
 
     uart0_init();
 
@@ -28,7 +28,6 @@ void main()
     uart_putc(3);
     uart_putc(3);
     uart_putc(3);
-/*
 
     // read the kernel's size
     size= uart_getc();
@@ -45,7 +44,6 @@ void main()
     }
     uart_putc('O');
     uart_putc('K');
-*/
 
     // read the kernel
     while(i < size) {
