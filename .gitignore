@@ -138,3 +138,5 @@ CTestTestfile.cmake
 .idea/**
 
 .DS_Store
+/xbuild_sysroot/
+/kernel/target/

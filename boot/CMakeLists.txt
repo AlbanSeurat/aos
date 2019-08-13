@@ -14,7 +14,7 @@ set(CMAKE_C_FLAGS "-ffreestanding -o2 -march=armv8-a+nofp -Wall -Wextra")
 
 include_directories(includes)
 
-add_executable(boot.elf src/boot.s src/boot.c src/io/uart.c)
+add_executable(boot.elf src/boot.s src/boot.c src/io/uart.c src/util/kprintf.c)
 
 add_custom_target(boot.img ALL
         DEPENDS boot.elf

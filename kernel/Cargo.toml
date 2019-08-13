@@ -5,10 +5,9 @@ authors = ["Alban Seurat <alban.seurat@me.com>"]
 edition = "2018"
 
 [dependencies]
+r0 = "0.2.2"
+cortex-a = "2.3.1"
 panic-abort = "0.3.1"
 
-[profile.dev]
-panic = "abort"
-
-[profile.release]
-panic = "abort"
+[package.metadata.cargo-xbuild]
+sysroot_path = "../xbuild_sysroot"

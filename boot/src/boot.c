@@ -36,7 +36,7 @@ void main()
     size |= uart_getc()<<24U;
 
     // send negative or positive acknowledge
-    if(size < 64 || size > SECTION_SIZE) {
+    if(size < 1 || size > SECTION_SIZE) {
         // size error
         uart_putc('S');
         uart_putc('E');
