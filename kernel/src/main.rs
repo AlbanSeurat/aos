@@ -1,10 +1,19 @@
 #![no_std]
 #![no_main]
 
-extern crate panic_abort;
+use cortex_a::asm;
+
+#[panic_handler]
+fn my_panic(info: &core::panic::PanicInfo) -> ! {
+    debugln!("{:?}", info);
+    asm::wfe();
+    loop {}
+}
+
 use cortex_a::regs::*;
 
 mod kernel;
+
 
 /// Reset function.
 ///

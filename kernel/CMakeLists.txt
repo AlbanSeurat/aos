@@ -1,6 +1,6 @@
 project (AoS-Kernel)
 
-file(GLOB_RECURSE RUST_SOURCES "*.rs")
+file(GLOB RUST_SOURCES "*.rs")
 
 set(LIB_FILE "target/aarch64-unknown-none/release/aos-kernel")
 

@@ -4,10 +4,17 @@
 name = "aos-kernel"
 version = "0.1.0"
 dependencies = [
+ "console-traits 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cortex-a 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "panic-abort 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "font8x8 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "r0 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "console-traits"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "cortex-a"
@@ -18,8 +25,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "panic-abort"
-version = "0.3.1"
+name = "font8x8"
+version = "0.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
@@ -41,8 +48,9 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
+"checksum console-traits 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "f711b3d1d5c3f7ae7d6428901c0f3e5d5f5c800fcfac86bf0252e96373a2cec6"
 "checksum cortex-a 2.5.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e0a04af56453a84a7e1032b3f53885ddd5960802a32945f812505ee88eaeea37"
-"checksum panic-abort 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "2c14a66511ed17b6a8b4256b868d7fd207836d891db15eea5195dbcaf87e630f"
+"checksum font8x8 0.2.5 (registry+https://github.com/rust-lang/crates.io-index)" = "44226c40489fb1d602344a1d8f1b544570c3435e396dda1eda7b5ef010d8f1be"
 "checksum r0 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e2a38df5b15c8d5c7e8654189744d8e396bddc18ad48041a500ce52d6948941f"
 "checksum register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "469bb5ddde81d67fb8bba4e14d77689b8166cfd077abe7530591cefe29d05823"
 "checksum tock-registers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c758f5195a2e0df9d9fecf6f506506b2766ff74cf64db1e995c87e2761a5c3e2"

@@ -7,7 +7,13 @@ edition = "2018"
 [dependencies]
 r0 = "0.2.2"
 cortex-a = "2.3.1"
-panic-abort = "0.3.1"
+register = "0.3.3"
+console-traits = "0.3.0"
+
+[dependencies.font8x8]
+version = "0.2.5"
+default-features = false
+features = ["unicode"]
 
 [package.metadata.cargo-xbuild]
 sysroot_path = "../xbuild_sysroot"
