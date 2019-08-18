@@ -7,7 +7,7 @@
 #include "timer.h"
 
 // we put the kernel just before the device and we will protect the last 4k bytes to prevent buffer overrun
-char * kernel = DEVICE_BASE - SECTION_SIZE;
+char * kernel = DEVICE_BASE - GPU_MEMORY_SIZE - SECTION_SIZE;
 
 void main()
 {

@@ -1,7 +1,6 @@
 use core::fmt::{Write, Arguments};
 use crate::kernel::UART;
 
-
 #[macro_export]
 macro_rules! debug {
     ($($arg:tt)*) => ($crate::kernel::macros::_debug(format_args!($($arg)*)));
@@ -24,4 +23,12 @@ pub fn _debug(args: Arguments) {
         UART.write_fmt(args).unwrap();
     }
 
+}
+
+#[macro_export]
+macro_rules! log {
+    ($w:ident, $($arg:tt)*) => {
+       $w.write_fmt(format_args!($($arg)*)).unwrap();
+       $w.write_str("\n").unwrap();
+    }
 }

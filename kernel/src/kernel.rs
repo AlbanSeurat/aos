@@ -1,7 +1,7 @@
 use crate::kernel::devices::virt::Console;
 use crate::kernel::devices::hw::{Uart, FrameBuffer};
-use core::borrow::Borrow;
-use console_traits::UnicodeConsole;
+use cortex_a::regs::{SP, RegisterReadWrite};
+use core::fmt::Write;
 
 #[macro_use]
 pub mod macros;
@@ -14,9 +14,14 @@ pub fn main() -> ! {
 
     let mut v_mbox = devices::hw::VideocoreMbox::new(memory::map::physical::VIDEOCORE_MBOX_BASE);
     let lfb : FrameBuffer = FrameBuffer::new(&mut v_mbox);
+    debug!("framebuffer : {:x?}", &lfb);
     let mut console : Console = Console::new(lfb);
-    //
-    console.write_string("Starting AoS...");
+
+
+    log!(console, "Starting AoS...");
+
+    let stack = SP.get();
+    log!(console, "stack {:x}", stack);
 
     loop {}
 }

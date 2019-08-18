@@ -1,6 +1,7 @@
 use crate::kernel::devices::hw::FrameBuffer;
 use console_traits::{UnicodeConsole, Position, BaseConsole, Col, Row, ControlCharMode, EscapeCharMode};
 use font8x8::{BASIC_FONTS, UnicodeFonts};
+use core::fmt;
 
 pub struct Console {
     lfb: FrameBuffer,
@@ -13,6 +14,13 @@ impl Console {
             lfb : fb,
             pos : Position::origin(),
         }
+    }
+}
+
+impl fmt::Write for Console {
+    fn write_str(&mut self, s: &str) -> fmt::Result {
+        self.write_string(s);
+        Ok(())
     }
 }
 

@@ -2,7 +2,7 @@ ENTRY(_boot_cores);
 
 SECTIONS
 {
-    . = 0x3ee00000;
+    . = 0x3ae00000;
 
     .text :
     {

@@ -22,7 +22,7 @@ mod kernel;
 #[link_section = ".text.boot"]
 #[no_mangle]
 unsafe fn reset() -> ! {
-    const STACK_START: u64 = 0x3F_000_000;
+    const STACK_START: u64 = 0x3B_000_000; // upper end of the kernel segment (2Mb max for a long time)
 
     SP.set(STACK_START);
 

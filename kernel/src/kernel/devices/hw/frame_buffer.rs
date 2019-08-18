@@ -1,7 +1,6 @@
 use crate::kernel::devices::hw::videocore_mbox;
 use core::sync::atomic::{compiler_fence, Ordering};
 use core::ptr;
-use font8x8::{UnicodeFonts, BASIC_FONTS};
 
 #[derive(Debug)]
 pub struct FrameBuffer {
