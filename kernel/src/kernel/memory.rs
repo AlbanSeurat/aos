@@ -215,15 +215,22 @@ fn get_virt_addr_properties(virt_addr: usize) -> Result<Option<(usize, Attribute
 
     for i in KERNEL_VIRTUAL_LAYOUT.iter() {
         if (i.virtual_range)().contains(&virt_addr) {
-            if i.map.is_some() {
-                let mapping = i.map.unwrap();
-                let output_addr = match mapping.translation {
-                    Translation::Identity => virt_addr,
-                    Translation::Offset(a) => a + (virt_addr - (i.virtual_range)().start()),
-                };
-                return Ok(Some((output_addr, mapping.attribute_fields)));
-            }
+            return Ok(get_layout_properties(i, virt_addr));
         }
     }
     Ok(None)
+}
+
+fn get_layout_properties(descriptor : &Descriptor, virt_addr : usize) -> Option<(usize, AttributeFields)> {
+    if descriptor.map.is_some() {
+        let mapping = descriptor.map.unwrap();
+        let output_addr = match mapping.translation {
+            Translation::Identity => virt_addr,
+            Translation::Offset(a) => a + (virt_addr - (descriptor.virtual_range)().start()),
+        };
+        debugln!("{:x} : {:x} , {:x?}", virt_addr, output_addr,  mapping.attribute_fields);
+        return Some((output_addr, mapping.attribute_fields));
+    } else {
+        return None
+    }
 }

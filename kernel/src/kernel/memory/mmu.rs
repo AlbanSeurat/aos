@@ -1,8 +1,9 @@
 use cortex_a::{barrier, regs::*};
 use crate::kernel::memory::mmu::mair::set_up_mair;
 use crate::kernel::memory::mmu::descriptors::{Lvl2BlockDescriptor, TWO_MIB_SHIFT, FOUR_KIB_SHIFT, PageDescriptor, TableDescriptor, get_block_mapping, get_page_mapping};
-use crate::kernel::memory::{get_virt_addr_properties, AttributeFields, map};
+use crate::kernel::memory::{get_virt_addr_properties, AttributeFields, map, get_layout_properties};
 use crate::kernel::memory::map::virt::{KERN_START, KERN_END};
+use crate::kernel::memory::kernel_mem_range::Descriptor;
 
 mod mair;
 mod descriptors;
@@ -113,4 +114,20 @@ pub unsafe fn init() -> Result<(), &'static str> {
     barrier::isb(barrier::SY);
 
     Ok(())
+}
+
+pub unsafe fn new(descriptor : &Descriptor, base_addr : usize) {
+
+    let index = base_addr >> FOUR_KIB_SHIFT;
+
+    let option = get_layout_properties(descriptor, base_addr);
+    if option.is_some() {
+        let (output_addr, attribute_fields) = option.unwrap();
+        let page_desc = match PageDescriptor::new(output_addr, attribute_fields) {
+            Err(s) => panic!(s),
+            Ok(desc) => desc,
+        };
+
+        LVL3_TABLE.entries[index] = page_desc.value()
+    }
 }

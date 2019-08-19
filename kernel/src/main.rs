@@ -28,6 +28,15 @@ unsafe fn reset() -> ! {
     // Zeroes the .bss section
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
+    match unsafe { kernel::memory::mmu::init() } {
+        Err(s) => {
+            debugln!("MMU error: {}\n", s);
+        }
+        // The following write is already using the identity mapped
+        // translation in the LVL2 table.
+        Ok(()) => ()
+    }
+
     kernel::main();
 }
 
