@@ -88,18 +88,26 @@ pub unsafe fn init() -> Result<(), &'static str> {
 
     // Point to the LVL2 table base address in TTBR0.
     TTBR0_EL1.set_baddr(LVL2_TABLE.entries.base_addr_u64());
+    TTBR1_EL1.set_baddr(LVL2_TABLE.entries.base_addr_u64());
 
     // Configure various settings of stage 1 of the EL1 translation regime.
     let ips = ID_AA64MMFR0_EL1.read(ID_AA64MMFR0_EL1::PARange);
     TCR_EL1.write(
         TCR_EL1::TBI0::Ignored
+            + TCR_EL1::TBI1::Ignored
             + TCR_EL1::IPS.val(ips)
             + TCR_EL1::TG0::KiB_4 // 4 KiB granule
+            + TCR_EL1::TG1::KiB_4
             + TCR_EL1::SH0::Inner
+            + TCR_EL1::SH1::Inner
             + TCR_EL1::ORGN0::WriteBack_ReadAlloc_WriteAlloc_Cacheable
+            + TCR_EL1::ORGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
             + TCR_EL1::IRGN0::WriteBack_ReadAlloc_WriteAlloc_Cacheable
+            + TCR_EL1::IRGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
             + TCR_EL1::EPD0::EnableTTBR0Walks
-            + TCR_EL1::T0SZ.val(34), // Start walks at level 2
+            + TCR_EL1::EPD1::EnableTTBR1Walks
+            + TCR_EL1::T0SZ.val(34)  // Start walks at level 2
+            + TCR_EL1::T1SZ.val(34), // Start walks at level 2
     );
 
     // Switch the MMU on.

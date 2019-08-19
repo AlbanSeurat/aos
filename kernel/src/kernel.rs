@@ -39,7 +39,7 @@ pub fn main() -> ! {
     let lfb : FrameBuffer = FrameBuffer::new(&mut v_mbox);
     let mut console : Console = Console::new(lfb);
     log!(console, "Starting AoS...");
-    
+
     // update MMU tables and try to write 10 into newly descriptor described in the table
     unsafe {
         memory::mmu::new(&test, 0x3ae0b000 - KERN_START);
