@@ -1,6 +1,7 @@
 use crate::kernel::devices::virt::Console;
 use crate::kernel::devices::hw::{Uart, FrameBuffer};
 use cortex_a::regs::{SP, RegisterReadWrite};
+use cortex_a::asm;
 use core::fmt::Write;
 use crate::reset;
 use crate::kernel::memory::KERNEL_VIRTUAL_LAYOUT;
@@ -40,10 +41,14 @@ pub fn main() -> ! {
     let mut console : Console = Console::new(lfb);
     log!(console, "Starting AoS...");
 
+    let s ="Writing through MMIO mapped in higher half!\r\n";
+
     // update MMU tables and try to write 10 into newly descriptor described in the table
     unsafe {
         memory::mmu::new(&test, 0x3ae0b000 - KERN_START);
-        core::ptr::write_volatile(0x3ae0b000 as *mut u64, 10 as u64);
+        core::ptr::write_volatile(0xFFFFFFFFFAE0B000 as *mut u64, 423423894723984 as u64);
+        let c = core::ptr::read_volatile(0x3ae0b000 as * mut u64);
+        debugln!("{}", c);
     }
 
     loop {}

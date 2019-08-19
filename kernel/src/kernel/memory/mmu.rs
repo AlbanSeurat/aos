@@ -88,6 +88,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
 
     // Point to the LVL2 table base address in TTBR0.
     TTBR0_EL1.set_baddr(LVL2_TABLE.entries.base_addr_u64());
+    // Point to the LVL2 table base address in TTBR1.
     TTBR1_EL1.set_baddr(LVL2_TABLE.entries.base_addr_u64());
 
     // Configure various settings of stage 1 of the EL1 translation regime.
