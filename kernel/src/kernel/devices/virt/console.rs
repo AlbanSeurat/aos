@@ -19,7 +19,7 @@ impl Console {
 
 impl fmt::Write for Console {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.write_string(s);
+        self.write_string(s).unwrap();
         Ok(())
     }
 }

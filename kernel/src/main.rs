@@ -34,7 +34,6 @@ unsafe fn reset() -> ! {
 /// Prepare and execute transition from EL2 to EL1.
 #[inline]
 fn setup_and_enter_el1_from_el2() -> ! {
-    use cortex_a::{asm, regs::*};
 
     const STACK_START: u64 = 0x3B_000_000; // upper end of the kernel segment (2Mb max for a long time)
 
@@ -78,7 +77,6 @@ fn setup_and_enter_el1_from_el2() -> ! {
 #[link_section = ".text.boot"]
 #[no_mangle]
 pub unsafe extern "C" fn _boot_cores() -> ! {
-    use cortex_a::{asm, regs::*};
 
     const EL2: u32 = CurrentEL::EL::EL2.value;
 
