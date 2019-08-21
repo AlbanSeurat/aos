@@ -1,4 +1,5 @@
 use crate::kernel::devices::hw::videocore_mbox;
+use crate::kernel::memory;
 use core::sync::atomic::{compiler_fence, Ordering};
 use core::ptr;
 
@@ -67,7 +68,7 @@ impl FrameBuffer {
                 width: v_mbox.buffer[5],
                 height: v_mbox.buffer[6],
                 pitch: v_mbox.buffer[33],
-                base_pointer: (v_mbox.buffer[28] & 0x3FFFFFFF) as usize,
+                base_pointer: memory::map::virt::START + v_mbox.buffer[28] as usize,
             }
         } else {
             panic!("Error setting up screen");

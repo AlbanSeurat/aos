@@ -2,7 +2,8 @@ ENTRY(_boot_cores);
 
 SECTIONS
 {
-    . = 0x3ae00000;
+    /* . = 0x3ae00000; */
+    . = 0xFFFFFFFFFae00000;
     __ro_start = .;
     .text :
     {
@@ -29,4 +30,14 @@ SECTIONS
     }
 
     /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }
+
+    /*
+    align 4096;
+    . = 0xFFFFFFFFC0000000;
+    .text :
+    {
+        KEEP(*(.text.upper))
+    }
+    */
+
 }

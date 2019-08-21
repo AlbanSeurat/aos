@@ -2,7 +2,7 @@ use cortex_a::{barrier, regs::*};
 use crate::kernel::memory::mmu::mair::set_up_mair;
 use crate::kernel::memory::mmu::descriptors::{Lvl2BlockDescriptor, TWO_MIB_SHIFT, FOUR_KIB_SHIFT, PageDescriptor, TableDescriptor, get_block_mapping, get_page_mapping};
 use crate::kernel::memory::{get_virt_addr_properties, AttributeFields, map, get_layout_properties};
-use crate::kernel::memory::map::virt::{KERN_START, KERN_END};
+use crate::kernel::memory::map::physical::{KERN_START, KERN_END};
 use crate::kernel::memory::kernel_mem_range::Descriptor;
 
 mod mair;
@@ -45,7 +45,7 @@ static mut LVL3_TABLE: PageTable = PageTable {
 };
 
 unsafe fn setup_kernel() -> Result<(), &'static str>{
-    const KERNEL_BLOCK_DESC: usize = map::virt::KERN_START >> TWO_MIB_SHIFT;
+    const KERNEL_BLOCK_DESC: usize = map::physical::KERN_START >> TWO_MIB_SHIFT;
 
     // Point 2 MiB of virtual addresses to the follow-up LVL3
     // page-table.
@@ -77,7 +77,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
         Ok(i) => i
     }
 
-    for (block_descriptor_nr, entry) in LVL2_TABLE.entries.iter_mut().enumerate().skip((map::virt::KERN_START >> TWO_MIB_SHIFT) + 1) {
+    for (block_descriptor_nr, entry) in LVL2_TABLE.entries.iter_mut().enumerate().skip((map::physical::KERN_START >> TWO_MIB_SHIFT) + 1) {
         let virt_addr = block_descriptor_nr << TWO_MIB_SHIFT;
 
         let option = get_block_mapping(virt_addr);
@@ -123,20 +123,4 @@ pub unsafe fn init() -> Result<(), &'static str> {
     barrier::isb(barrier::SY);
 
     Ok(())
-}
-
-pub unsafe fn new(descriptor : &Descriptor, base_addr : usize) {
-
-    let index = base_addr >> FOUR_KIB_SHIFT;
-
-    let option = get_layout_properties(descriptor, base_addr);
-    if option.is_some() {
-        let (output_addr, attribute_fields) = option.unwrap();
-        let page_desc = match PageDescriptor::new(output_addr, attribute_fields) {
-            Err(s) => panic!(s),
-            Ok(desc) => desc,
-        };
-
-        LVL3_TABLE.entries[index] = page_desc.value()
-    }
 }

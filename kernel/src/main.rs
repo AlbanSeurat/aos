@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+#![feature(asm)]
+#![feature(core_intrinsics)]
 
 use cortex_a::asm;
 
@@ -32,12 +34,14 @@ unsafe fn reset() -> ! {
         Err(s) => {
             debugln!("MMU error: {}\n", s);
         }
-        // The following write is already using the identity mapped
-        // translation in the LVL2 table.
         Ok(()) => ()
     }
 
-    kernel::main();
+    SP.set(0xFFFFFFFFC0000000 + SP.get());
+    let upper_main: extern "C" fn() = unsafe { core::mem::transmute(0xFFFFFFFFC0000000 + kernel::main as usize) };
+    upper_main();
+
+    loop {}
 }
 
 /// Prepare and execute transition from EL2 to EL1.
@@ -81,8 +85,7 @@ fn setup_and_enter_el1_from_el2() -> ! {
 
 /// Entrypoint of the processor.
 ///
-/// Parks all cores except core0 and checks if we started in EL2. If
-/// so, proceeds with setting up EL1.
+/// No need to park other processor it has been done by boot.c
 #[link_section = ".text.boot"]
 #[no_mangle]
 pub unsafe extern "C" fn _boot_cores() -> ! {
@@ -93,8 +96,6 @@ pub unsafe extern "C" fn _boot_cores() -> ! {
         setup_and_enter_el1_from_el2()
     }
 
-    // if not core0 or EL != 2, infinitely wait for events
-    loop {
-        asm::wfe();
-    }
+    // if we are already in EL1 call directly reset
+    reset();
 }

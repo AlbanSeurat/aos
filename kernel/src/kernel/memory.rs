@@ -15,9 +15,6 @@ pub mod map {
         pub const GPIO_BASE:           usize = MMIO_BASE + 0x0020_0000;
         pub const UART_BASE:           usize = MMIO_BASE + 0x0020_1000;
         pub const MMIO_END:            usize =             super::END;
-    }
-
-    pub mod virt {
 
         pub const KERN_START:          usize =             0x3AE0_0000;
         pub const KERN_END:            usize =             0x3AFF_FFFF;
@@ -27,6 +24,15 @@ pub mod map {
 
         pub const GPU_BASE:            usize =             0x3B00_0000;
         pub const GPU_END:             usize =             0x3EFF_FFFF;
+    }
+
+    pub mod virt {
+        pub const START:               usize =      0xFFFFFFFFC0000000;
+        pub const MMIO_BASE:           usize =     START + 0x3F00_0000;
+        pub const VIDEOCORE_MBOX_BASE: usize = MMIO_BASE + 0x0000_B880;
+
+
+        pub const UART_BASE:           usize = MMIO_BASE + 0x0020_1000;
     }
 }
 
@@ -158,7 +164,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
             unsafe {
                 RangeInclusive::new(
                     &__bss_end as *const _ as usize,
-                    map::virt::KERN_STACK_START - 1
+                    map::physical::KERN_STACK_START - 1
                 )
             }
         },
@@ -167,7 +173,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
     // Kernel stack
     Descriptor {
         virtual_range: || {
-            RangeInclusive::new(map::virt::KERN_STACK_START, map::virt::KERN_STACK_END)
+            RangeInclusive::new(map::physical::KERN_STACK_START, map::physical::KERN_STACK_END)
         },
         map: Some(Mapping {
             translation: Translation::Identity,
@@ -180,7 +186,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
     },
     // GPU Ram
     Descriptor {
-        virtual_range: || RangeInclusive::new(map::virt::GPU_BASE, map::virt::GPU_END),
+        virtual_range: || RangeInclusive::new(map::physical::GPU_BASE, map::physical::GPU_END),
         map: Some(Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
@@ -228,7 +234,6 @@ fn get_layout_properties(descriptor : &Descriptor, virt_addr : usize) -> Option<
             Translation::Identity => virt_addr,
             Translation::Offset(a) => a + (virt_addr - (descriptor.virtual_range)().start()),
         };
-        debugln!("{:x} : {:x} , {:x?}", virt_addr, output_addr,  mapping.attribute_fields);
         return Some((output_addr, mapping.attribute_fields));
     } else {
         return None

@@ -6,7 +6,7 @@ edition = "2018"
 
 [dependencies]
 r0 = "0.2.2"
-cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "ttbr1_el1" }
+cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "register_lr" }
 register = "0.3.3"
 console-traits = "0.3.0"
 
