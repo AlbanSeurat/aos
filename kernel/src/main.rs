@@ -2,6 +2,7 @@
 #![no_main]
 #![feature(asm)]
 #![feature(core_intrinsics)]
+#![feature(global_asm)]
 
 use cortex_a::asm;
 
@@ -59,7 +60,7 @@ fn setup_and_enter_el1_from_el2() -> ! {
     // Set EL1 execution state to AArch64
     HCR_EL2.write(HCR_EL2::RW::EL1IsAarch64);
 
-    // Set up a simulated exception return.
+    // Set up a simulated exceptions return.
     //
     // First, fake a saved program status, where all interrupts were
     // masked and SP_EL1 was used as a stack pointer.

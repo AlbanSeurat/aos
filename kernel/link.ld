@@ -9,6 +9,10 @@ SECTIONS
     {
         KEEP(*(.text.boot)) *(.text .text.*)
     }
+    .vectors ALIGN(2048):
+    {
+        *(.vectors)
+    }
     .rodata :
     {
         *(.rodata .rodata.*)
