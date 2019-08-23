@@ -1,19 +1,12 @@
 [package]
-name = "aos-kernel"
+name = "aos-remote"
 version = "0.1.0"
 authors = ["Alban Seurat <alban.seurat@me.com>"]
 edition = "2018"
 
 [dependencies]
-r0 = "0.2.2"
 cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "elr_el1" }
 register = "0.3.3"
-console-traits = "0.3.0"
-
-[dependencies.font8x8]
-version = "0.2.5"
-default-features = false
-features = ["unicode"]
 
 [package.metadata.cargo-xbuild]
 sysroot_path = "../xbuild_sysroot"

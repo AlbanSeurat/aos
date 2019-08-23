@@ -2,16 +2,11 @@ ENTRY(_boot_cores);
 
 SECTIONS
 {
-    /* . = 0x3ae00000; */
-    . = 0xFFFFFFFFFae00000;
+    . = 0;
     __ro_start = .;
     .text :
     {
         KEEP(*(.text.boot)) *(.text .text.*)
-    }
-    .vectors ALIGN(2048):
-    {
-        *(.vectors)
     }
     .rodata :
     {

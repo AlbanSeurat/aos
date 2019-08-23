@@ -1,6 +1,6 @@
 use crate::kernel::devices::virt::Console;
 use crate::kernel::devices::hw::{Uart, FrameBuffer};
-use cortex_a::regs::{LR, TTBR0_EL1, RegisterReadWrite};
+use cortex_a::regs::{LR, TTBR0_EL1, ELR_EL1, RegisterReadWrite};
 use cortex_a::asm;
 use core::fmt::Write;
 use crate::reset;
@@ -43,16 +43,10 @@ pub fn main() -> ! {
     }
 
 
-    // Cause an exception by accessing a virtual address for which no
-    // address translations have been set up.
-    //
-    // This line of code accesses the address 3 GiB, but page tables are
-    // only set up for the range [0..1] GiB.
-    let big_addr: u64 = 3 * 1024 * 1024 * 1024;
-    unsafe { core::ptr::read_volatile(big_addr as *mut u64) };
-
-
     debugln!("main has been called in upper space {:x?}", pc);
+
+    ELR_EL1.set(0);
+    asm::eret();
 
     loop {}
 }

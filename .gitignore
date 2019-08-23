@@ -139,4 +139,4 @@ CTestTestfile.cmake
 
 .DS_Store
 /xbuild_sysroot/
-/kernel/target/
+**/target/

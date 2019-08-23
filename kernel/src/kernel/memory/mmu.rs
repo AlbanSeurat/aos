@@ -33,14 +33,14 @@ struct PageTable {
 }
 
 /// The LVL2 page table containng the 2 MiB entries.
-static mut LVL2_TABLE: PageTable = PageTable {
+static mut KERNEL_LVL2_TABLE: PageTable = PageTable {
     entries: [0; NUM_ENTRIES_4KIB],
 };
 
 /// The LVL3 page table containing the 4 KiB entries.
 ///
 /// The kernel entry of the LVL2_TABLE will forward to this table.
-static mut LVL3_TABLE: PageTable = PageTable {
+static mut KERNEL_LVL3_TABLE: PageTable = PageTable {
     entries: [0; NUM_ENTRIES_4KIB],
 };
 
@@ -49,12 +49,12 @@ unsafe fn setup_kernel() -> Result<(), &'static str>{
 
     // Point 2 MiB of virtual addresses to the follow-up LVL3
     // page-table.
-    LVL2_TABLE.entries[KERNEL_BLOCK_DESC] = match TableDescriptor::new(LVL3_TABLE.entries.base_addr_usize()) {
+    KERNEL_LVL2_TABLE.entries[KERNEL_BLOCK_DESC] = match TableDescriptor::new(KERNEL_LVL3_TABLE.entries.base_addr_usize()) {
         Err(s) => return Err(s),
         Ok(d) => d.value(),
     };
 
-    for (page_descriptor_nr, entry) in LVL3_TABLE.entries.iter_mut().enumerate() {
+    for (page_descriptor_nr, entry) in KERNEL_LVL3_TABLE.entries.iter_mut().enumerate() {
         let virt_addr = page_descriptor_nr << FOUR_KIB_SHIFT;
 
         let option = get_page_mapping(KERN_START + virt_addr);
@@ -77,7 +77,7 @@ pub unsafe fn init() -> Result<(), &'static str> {
         Ok(i) => i
     }
 
-    for (block_descriptor_nr, entry) in LVL2_TABLE.entries.iter_mut().enumerate().skip((map::physical::KERN_START >> TWO_MIB_SHIFT) + 1) {
+    for (block_descriptor_nr, entry) in KERNEL_LVL2_TABLE.entries.iter_mut().enumerate().skip((map::physical::KERN_START >> TWO_MIB_SHIFT) + 1) {
         let virt_addr = block_descriptor_nr << TWO_MIB_SHIFT;
 
         let option = get_block_mapping(virt_addr);
@@ -87,9 +87,9 @@ pub unsafe fn init() -> Result<(), &'static str> {
     }
 
     // Point to the LVL2 table base address in TTBR0.
-    TTBR0_EL1.set_baddr(LVL2_TABLE.entries.base_addr_u64());
+    TTBR0_EL1.set_baddr(KERNEL_LVL2_TABLE.entries.base_addr_u64());
     // Point to the LVL2 table base address in TTBR1.
-    TTBR1_EL1.set_baddr(LVL2_TABLE.entries.base_addr_u64());
+    TTBR1_EL1.set_baddr(KERNEL_LVL2_TABLE.entries.base_addr_u64());
 
     // Configure various settings of stage 1 of the EL1 translation regime.
     let ips = ID_AA64MMFR0_EL1.read(ID_AA64MMFR0_EL1::PARange);
