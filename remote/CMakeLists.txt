@@ -13,5 +13,7 @@ add_custom_command(
 
 add_custom_target(aos-remote.img ALL
         DEPENDS ${LIB_FILE}
-        COMMAND cargo objcopy -- --strip-all -O binary ${LIB_FILE} aos-remote.img)
+        COMMAND cargo objcopy -- --strip-all -O binary ${LIB_FILE} ../kernel/aos-remote.img)
+
+
 
