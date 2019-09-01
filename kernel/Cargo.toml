@@ -24,5 +24,3 @@ rustflags = [
   "-C", "target-feature=-fp-armv8",
   "-C", "target-cpu=cortex-a53",
 ]
-[profile.release]
-debug = true

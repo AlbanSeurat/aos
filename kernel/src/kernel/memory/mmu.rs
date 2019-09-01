@@ -1,9 +1,11 @@
 use cortex_a::{barrier, regs::*};
+use cortex_a::asm;
 use crate::kernel::memory::mmu::mair::set_up_mair;
-use crate::kernel::memory::mmu::descriptors::{Lvl2BlockDescriptor, TWO_MIB_SHIFT, FOUR_KIB_SHIFT, PageDescriptor, TableDescriptor, get_block_mapping, get_page_mapping};
-use crate::kernel::memory::{get_virt_addr_properties, AttributeFields, map, get_layout_properties};
+use crate::kernel::memory::mmu::descriptors::{Lvl2BlockDescriptor, TWO_MIB_SHIFT, FOUR_KIB_SHIFT, PageDescriptor, TableDescriptor, kernel_2M_page_mapping, kernel_4k_page_mapping, user_2M_page_mapping};
+use crate::kernel::memory::{get_kernel_virt_addr_properties, AttributeFields, map, get_layout_properties};
 use crate::kernel::memory::map::physical::{KERN_START, KERN_END};
 use crate::kernel::memory::kernel_mem_range::Descriptor;
+use crate::kernel::memory;
 
 mod mair;
 mod descriptors;
@@ -17,7 +19,6 @@ impl BaseAddr for [u64; 512] {
     fn base_addr_u64(&self) -> u64 {
         self as *const u64 as u64
     }
-
     fn base_addr_usize(&self) -> usize {
         self as *const u64 as usize
     }
@@ -44,6 +45,11 @@ static mut KERNEL_LVL3_TABLE: PageTable = PageTable {
     entries: [0; NUM_ENTRIES_4KIB],
 };
 
+/// The LVL2 page table containng the 2 MiB entries.
+static mut USER_LVL2_TABLE: PageTable = PageTable {
+    entries: [0; NUM_ENTRIES_4KIB],
+};
+
 unsafe fn setup_kernel() -> Result<(), &'static str>{
     const KERNEL_BLOCK_DESC: usize = map::physical::KERN_START >> TWO_MIB_SHIFT;
 
@@ -57,7 +63,7 @@ unsafe fn setup_kernel() -> Result<(), &'static str>{
     for (page_descriptor_nr, entry) in KERNEL_LVL3_TABLE.entries.iter_mut().enumerate() {
         let virt_addr = page_descriptor_nr << FOUR_KIB_SHIFT;
 
-        let option = get_page_mapping(KERN_START + virt_addr);
+        let option = kernel_4k_page_mapping(KERN_START + virt_addr);
         if option.is_some() {
             *entry = option.unwrap().value();
         }
@@ -72,18 +78,19 @@ pub unsafe fn init() -> Result<(), &'static str> {
     // Prepare the memory attribute indirection register.
     set_up_mair();
 
-    match setup_kernel() {
-        Err(s) => return Err(s),
-        Ok(i) => i
-    }
-
+    // kernel can not access addresses below KERN_START (0x3AE0_0000)
     for (block_descriptor_nr, entry) in KERNEL_LVL2_TABLE.entries.iter_mut().enumerate().skip((map::physical::KERN_START >> TWO_MIB_SHIFT) + 1) {
         let virt_addr = block_descriptor_nr << TWO_MIB_SHIFT;
 
-        let option = get_block_mapping(virt_addr);
+        let option = kernel_2M_page_mapping(virt_addr);
         if option.is_some() {
             *entry = option.unwrap().value();
         }
+    }
+
+    match setup_kernel() {
+        Err(s) => return Err(s),
+        Ok(i) => i
     }
 
     // Point to the LVL2 table base address in TTBR0.
@@ -123,4 +130,21 @@ pub unsafe fn init() -> Result<(), &'static str> {
     barrier::isb(barrier::SY);
 
     Ok(())
+}
+
+pub unsafe fn reset_el0() {
+    // this will make break every attempt to get data outside kernel address space
+    // TODO : improve address management rather than substracting virt base memory
+    TTBR0_EL1.set_baddr(USER_LVL2_TABLE.entries.base_addr_u64() - memory::map::virt::START as u64);
+}
+
+pub unsafe fn map_user_table(desc : &Descriptor) {
+    let range = (desc.virtual_range)();
+    let start = range.start();
+
+    let option = user_2M_page_mapping(desc, *start);
+    if option.is_some() {
+        USER_LVL2_TABLE.entries[start >> TWO_MIB_SHIFT] = option.unwrap().value();
+    }
+    barrier::isb(barrier::SY);
 }

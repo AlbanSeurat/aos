@@ -1,7 +1,7 @@
 use register::register_bitfields;
-use crate::kernel::memory::kernel_mem_range::AttributeFields;
+use crate::kernel::memory::kernel_mem_range::{AttributeFields, Descriptor};
 use crate::kernel::memory::mmu::mair;
-use crate::kernel::memory::get_virt_addr_properties;
+use crate::kernel::memory::{get_kernel_virt_addr_properties, get_user_virt_addr_properties};
 
 register_bitfields! {u64,
     // AArch64 Reference Manual page 2150
@@ -99,8 +99,10 @@ fn into_mmu_attributes(
 
     // Access Permissions
     desc += match attribute_fields.acc_perms {
-        AccessPermissions::ReadOnly => STAGE1_DESCRIPTOR::AP::RO_EL1,
-        AccessPermissions::ReadWrite => STAGE1_DESCRIPTOR::AP::RW_EL1,
+        AccessPermissions::ReadOnlyKernel => STAGE1_DESCRIPTOR::AP::RO_EL1,
+        AccessPermissions::ReadWriteKernel => STAGE1_DESCRIPTOR::AP::RW_EL1,
+        AccessPermissions::ReadOnlyUser => STAGE1_DESCRIPTOR::AP::RO_EL1_EL0,
+        AccessPermissions::ReadWriteUser => STAGE1_DESCRIPTOR::AP::RW_EL1_EL0,
     };
 
     // Execute Never
@@ -174,9 +176,9 @@ impl PageDescriptor {
 }
 
 // TODO : Try to generify the two functions
-pub fn get_page_mapping(virt_addr: usize) -> Option<PageDescriptor> {
+pub fn kernel_4k_page_mapping(virt_addr: usize) -> Option<PageDescriptor> {
 
-    let option= match get_virt_addr_properties(virt_addr) {
+    let option= match get_kernel_virt_addr_properties(virt_addr) {
         Err(s) => panic!(s),
         Ok(i) => i,
     };
@@ -193,13 +195,28 @@ pub fn get_page_mapping(virt_addr: usize) -> Option<PageDescriptor> {
     }
 }
 
-pub fn get_block_mapping(virt_addr: usize) -> Option<Lvl2BlockDescriptor> {
+// we can not pass descriptor reference (linker is using 0xFFFFFFFCxxxxx addresses)
+pub fn kernel_2M_page_mapping(virt_addr: usize) -> Option<Lvl2BlockDescriptor> {
 
-    let option= match get_virt_addr_properties(virt_addr) {
+    let option= match get_kernel_virt_addr_properties(virt_addr) {
         Err(s) => return panic!(s),
         Ok(i) => i,
     };
 
+    return mapDescriptorToBlock(option);
+}
+
+pub fn user_2M_page_mapping(desc : &Descriptor, virt_addr: usize) -> Option<Lvl2BlockDescriptor> {
+
+    let option= match get_user_virt_addr_properties(desc, virt_addr) {
+        Err(s) => return panic!(s),
+        Ok(i) => i,
+    };
+
+    return mapDescriptorToBlock(option);
+}
+
+fn mapDescriptorToBlock(option: Option<(usize, AttributeFields)>) -> Option<Lvl2BlockDescriptor> {
     if option.is_some() {
         let (output_addr, attribute_fields) = option.unwrap();
         let page_desc = match Lvl2BlockDescriptor::new(output_addr, attribute_fields) {
@@ -210,6 +227,8 @@ pub fn get_block_mapping(virt_addr: usize) -> Option<Lvl2BlockDescriptor> {
     } else {
         return None
     }
-
 }
+
+
+
 

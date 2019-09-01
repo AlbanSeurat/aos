@@ -27,7 +27,7 @@ pub mod map {
     }
 
     pub mod virt {
-        pub const START:               usize =      0xFFFFFFFFC0000000;
+        pub const START:               usize =   0xFFFF_FFFF_C000_0000;
         pub const MMIO_BASE:           usize =     START + 0x3F00_0000;
         pub const VIDEOCORE_MBOX_BASE: usize = MMIO_BASE + 0x0000_B880;
 
@@ -49,8 +49,10 @@ pub mod kernel_mem_range {
 
     #[derive(Copy, Clone, Debug)]
     pub enum AccessPermissions {
-        ReadOnly,
-        ReadWrite,
+        ReadOnlyKernel,
+        ReadWriteKernel,
+        ReadOnlyUser, // include kernel
+        ReadWriteUser, // include kernel
     }
 
     #[derive(Copy, Clone, Debug)]
@@ -70,7 +72,7 @@ pub mod kernel_mem_range {
         fn default() -> AttributeFields {
             AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWrite,
+                acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
             }
         }
@@ -125,7 +127,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadOnly,
+                acc_perms: AccessPermissions::ReadOnlyKernel,
                 execute_never: false,
             },
         })
@@ -149,7 +151,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWrite,
+                acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
             }
         }),
@@ -179,7 +181,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWrite,
+                acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
             },
         }),
@@ -191,7 +193,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWrite,
+                acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
             }
         })
@@ -203,7 +205,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::Device,
-                acc_perms: AccessPermissions::ReadWrite,
+                acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
             },
         })
@@ -214,7 +216,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
 /// according attributes.
 ///
 /// If the address is not covered in VIRTUAL_LAYOUT, return none and do not allow to translate the address
-fn get_virt_addr_properties(virt_addr: usize) -> Result<Option<(usize, AttributeFields)>, &'static str> {
+fn get_kernel_virt_addr_properties(virt_addr: usize) -> Result<Option<(usize, AttributeFields)>, &'static str> {
     if virt_addr > map::END {
         return Err("Address out of range.");
     }
@@ -234,8 +236,19 @@ fn get_layout_properties(descriptor : &Descriptor, virt_addr : usize) -> Option<
             Translation::Identity => virt_addr,
             Translation::Offset(a) => a + (virt_addr - (descriptor.virtual_range)().start()),
         };
-        return Some((output_addr, mapping.attribute_fields));
+        return Some((output_addr, mapping.attribute_fields))
     } else {
         return None
     }
 }
+
+fn get_user_virt_addr_properties(descriptor: &Descriptor, virt_addr: usize) -> Result<Option<(usize, AttributeFields)>, &'static str> {
+    if virt_addr > map::END {
+        return Err("Address out of range.");
+    }
+    if (descriptor.virtual_range)().contains(&virt_addr) {
+        return Ok(get_layout_properties(descriptor, virt_addr));
+    }
+    Ok(None)
+}
+

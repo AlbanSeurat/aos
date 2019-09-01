@@ -39,8 +39,8 @@ unsafe fn reset() -> ! {
         Ok(()) => ()
     }
 
-    SP.set(0xFFFFFFFFC0000000 + SP.get());
-    let upper_main: extern "C" fn() = unsafe { core::mem::transmute(0xFFFFFFFFC0000000 + kernel::main as usize) };
+    SP.set(kernel::memory::map::virt::START as u64 + SP.get());
+    let upper_main: extern "C" fn() = unsafe { core::mem::transmute(kernel::memory::map::virt::START + kernel::main as usize) };
     upper_main();
 
     loop {}
@@ -85,7 +85,7 @@ fn setup_el1_and_jump_high() -> ! {
 #[inline]
 fn move_kernel() {
     unsafe {
-        let kernel_size = 0x1FE800;
+        let kernel_size = 0x00200000; // 2Mb (max)
         asm!("1: \
         ldr X3, [X1], #8; \
         str X3, [X0], #8; \
@@ -115,6 +115,4 @@ pub unsafe extern "C" fn _boot_cores() -> ! {
     loop {
         asm::wfe();
     }
-
-
 }
