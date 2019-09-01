@@ -1,6 +1,6 @@
 use crate::kernel::devices::virt::Console;
 use crate::kernel::devices::hw::{Uart, FrameBuffer};
-use cortex_a::regs::{LR, TTBR0_EL1, ELR_EL1, RegisterReadWrite};
+use cortex_a::regs::{TTBR0_EL1, ELR_EL1, RegisterReadWrite};
 use cortex_a::asm;
 use core::fmt::Write;
 use crate::reset;
@@ -41,7 +41,6 @@ pub fn main() -> ! {
         let exception_vectors_start: u64 = &__exception_vectors_start as *const _ as u64;
         set_vbar_el1_checked(exception_vectors_start)
     }
-
 
     debugln!("main has been called in upper space {:x?}", pc);
 

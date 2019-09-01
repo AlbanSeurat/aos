@@ -51,6 +51,8 @@ void main()
         kernel[i++] = value;
     }
 
+    kprintf("%x", kernel);
+
     // jump to the new kernel. we must force an absolute address
     asm volatile ("mov x30, %0; ret" :: "r"(kernel));
 }

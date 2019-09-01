@@ -5,6 +5,9 @@
 #![feature(global_asm)]
 
 use cortex_a::asm;
+use cortex_a::regs::*;
+use core::ptr::copy;
+mod kernel;
 
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
@@ -13,28 +16,26 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
-use cortex_a::regs::*;
-mod kernel;
+extern "C" {
+    // Boundaries of the .bss section, provided by the linker script
+    static mut __bss_start: u64;
+    static mut __bss_end: u64;
 
-/// Reset function.
-///
-/// Initializes the bss section before calling into the user's `main()`.
-/// No need to park other processor, it has been done by boot.c
+    static mut __kernel_start: u64;
+    static mut __kernel_end: u64;
+}
+const STACK_START: u64 = 0x3B_000_000; // upper end of the kernel segment (2Mb max for a long time)
+const KERN_START: u64 = 0x3A_E00_000; // lower end of the kernel segment
+
+const ARM_STARTUP: u64 = 0x80_000;
+
 unsafe fn reset() -> ! {
-
-    extern "C" {
-        // Boundaries of the .bss section, provided by the linker script
-        static mut __bss_start: u64;
-        static mut __bss_end: u64;
-    }
 
     // Zeroes the .bss section
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
     match unsafe { kernel::memory::mmu::init() } {
-        Err(s) => {
-            debugln!("MMU error: {}\n", s);
-        }
+        Err(s) => (),
         Ok(()) => ()
     }
 
@@ -45,11 +46,8 @@ unsafe fn reset() -> ! {
     loop {}
 }
 
-/// Prepare and execute transition from EL2 to EL1.
 #[inline]
-fn setup_and_enter_el1_from_el2() -> ! {
-
-    const STACK_START: u64 = 0x3B_000_000; // upper end of the kernel segment (2Mb max for a long time)
+fn setup_el1_and_jump_high() -> ! {
 
     // Enable timer counter registers for EL1
     CNTHCTL_EL2.write(CNTHCTL_EL2::EL1PCEN::SET + CNTHCTL_EL2::EL1PCTEN::SET);
@@ -73,7 +71,7 @@ fn setup_and_enter_el1_from_el2() -> ! {
     );
 
     // Second, let the link register point to reset().
-    ELR_EL2.set(reset as *const () as u64);
+    ELR_EL2.set(KERN_START - ARM_STARTUP + reset as *const () as u64);
 
     // Set up SP_EL1 (stack pointer), which will be used by EL1 once
     // we "return" to it.
@@ -84,6 +82,18 @@ fn setup_and_enter_el1_from_el2() -> ! {
     asm::eret()
 }
 
+#[inline]
+fn move_kernel() {
+    unsafe {
+        let kernel_size = 0x1FE800;
+        asm!("1: \
+        ldr X3, [X1], #8; \
+        str X3, [X0], #8; \
+        subs X2, X2, #8; \
+        bge 1b;" :: "{X1}"(ARM_STARTUP), "{X0}"(KERN_START), "{X2}"(kernel_size) : "X3" : "volatile");
+    }
+}
+
 /// Entrypoint of the processor.
 ///
 /// No need to park other processor it has been done by boot.c
@@ -92,11 +102,19 @@ fn setup_and_enter_el1_from_el2() -> ! {
 pub unsafe extern "C" fn _boot_cores() -> ! {
 
     const EL2: u32 = CurrentEL::EL::EL2.value;
+    const CORE_0: u64 = 0;
+    const CORE_MASK: u64 = 0x3;
 
-    if EL2 == CurrentEL.get() {
-        setup_and_enter_el1_from_el2()
+    if CORE_0 == MPIDR_EL1.get() & CORE_MASK {
+        move_kernel();
+        if EL2 == CurrentEL.get() {
+            setup_el1_and_jump_high()
+        }
+    }
+    // if not core0 or not EL2, infinitely wait for events
+    loop {
+        asm::wfe();
     }
 
-    // if we are already in EL1 call directly reset
-    reset();
+
 }

@@ -4,5 +4,5 @@ project (AoS)
 # Add sub directories
 add_subdirectory(boot)
 add_subdirectory(bootcomm)
+add_subdirectory(remote)
 add_subdirectory(kernel)
-add_subdirectory(remote-ir)

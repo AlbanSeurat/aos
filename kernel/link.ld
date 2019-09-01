@@ -4,6 +4,7 @@ SECTIONS
 {
     /* . = 0x3ae00000; */
     . = 0xFFFFFFFFFae00000;
+    __kernel_start = .;
     __ro_start = .;
     .text :
     {
@@ -32,7 +33,6 @@ SECTIONS
         *(COMMON)
         __bss_end = .;
     }
-
     /DISCARD/ : { *(.comment) *(.gnu*) *(.note*) *(.eh_frame*) }
-
+    __kernel_end = .;
 }
