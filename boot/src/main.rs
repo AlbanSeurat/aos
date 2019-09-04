@@ -9,6 +9,8 @@
 use cortex_a::asm;
 use cortex_a::regs::*;
 
+mod exceptions;
+
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
     debugln!("{:?}", info);
@@ -45,6 +47,10 @@ unsafe fn reset() -> ! {
             cortex_a::asm::wfe() // If UART fails, abort early
         },
     }
+    exceptions::init();
+
+    debugln!("write to 0x80000000000");
+    core::ptr::write_volatile(0x80000000000 as *mut u64, 0);
 
     loop {}
 }
@@ -99,7 +105,7 @@ pub unsafe extern "C" fn _boot_cores() -> ! {
     if CORE_0 == MPIDR_EL1.get() & CORE_MASK {
 
         if EL2 == CurrentEL.get() {
-            setup_el1_and_jump_high()
+            setup_el1_and_jump_high();
         }
         reset();
     }

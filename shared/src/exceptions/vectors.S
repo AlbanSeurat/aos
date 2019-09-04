@@ -69,7 +69,7 @@ __exception_vectors_start:
     FIQ_DUMMY                                                       // 0x100
     SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // current_el0_serror        // 0x180
 
-    SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // current_elx_synchronous   // 0x200
+    SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE current_elx_synchronous   // 0x200
     SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // current_elx_irq           // 0x280
     FIQ_DUMMY                                                       // 0x300
     SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // current_elx_serror        // 0x380

@@ -1,29 +1,20 @@
 global_asm!(include_str!("vectors.S"));
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct GPR {
     x: [u64; 31],
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct ExceptionContext {
     // General Purpose Registers
-    gpr: GPR,
-    spsr_el1: u64,
-    elr_el1: u64,
+    pub gpr: GPR,
+    pub spsr_el1: u64,
+    pub elr_el1: u64,
 }
 
-
-/// The default exceptions, invoked for every exceptions type unless the handler
-/// is overwritten.
-#[no_mangle]
-unsafe extern "C" fn default_exception_handler() {
-    debugln!("Unexpected exceptions. Halting CPU.");
-
-    loop {
-        cortex_a::asm::wfe()
-    }
-}
 
 // To implement an exceptions handler, overwrite it by defining the respective
 // function below.

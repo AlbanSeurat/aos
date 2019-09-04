@@ -1,6 +1,6 @@
 all: kernel
 kernel: elf
-	cargo objcopy -- --strip-all -O binary target/aarch64-unknown-none/release/boot kernel8.img
+	cargo objcopy -- --strip-all -O binary ../target/aarch64-unknown-none/release/aos-boot ../kernel8.img
 elf:
 	cargo xrustc --target aarch64-unknown-none --release
 clean:

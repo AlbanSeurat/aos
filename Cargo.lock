@@ -4,20 +4,17 @@
 name = "aos-boot"
 version = "0.1.0"
 dependencies = [
- "cortex-a 2.6.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)",
+ "cortex-a 2.7.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)",
  "mmio 0.1.0",
  "r0 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shared 0.1.0",
 ]
 
 [[package]]
-name = "aos-shared"
-version = "0.1.0"
-
-[[package]]
 name = "cortex-a"
-version = "2.6.0"
-source = "git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1#dade911270157f97074124bda2f06a1cac214950"
+version = "2.7.0"
+source = "git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1#3fb0281f7e8ba170773c8425169530ef8028181c"
 dependencies = [
  "register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -26,7 +23,7 @@ dependencies = [
 name = "mmio"
 version = "0.1.0"
 dependencies = [
- "cortex-a 2.6.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)",
+ "cortex-a 2.7.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)",
  "register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -44,12 +41,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "shared"
+version = "0.1.0"
+dependencies = [
+ "cortex-a 2.7.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)",
+ "register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "tock-registers"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [metadata]
-"checksum cortex-a 2.6.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)" = "<none>"
+"checksum cortex-a 2.7.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)" = "<none>"
 "checksum r0 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)" = "e2a38df5b15c8d5c7e8654189744d8e396bddc18ad48041a500ce52d6948941f"
 "checksum register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)" = "469bb5ddde81d67fb8bba4e14d77689b8166cfd077abe7530591cefe29d05823"
 "checksum tock-registers 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)" = "c758f5195a2e0df9d9fecf6f506506b2766ff74cf64db1e995c87e2761a5c3e2"

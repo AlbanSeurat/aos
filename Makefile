@@ -1,5 +1,9 @@
-all: lib
-lib:
-	cargo xrustc --target aarch64-unknown-none --release
-clean:
-	cargo clean
+TOPTARGETS := all clean
+
+SUBDIRS := mmio boot shared
+
+$(TOPTARGETS): $(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@ $(MAKECMDGOALS)
+
+.PHONY: $(TOPTARGETS) $(SUBDIRS) kernel
