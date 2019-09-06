@@ -3,6 +3,7 @@ ENTRY(_boot_cores);
 SECTIONS
 {
     . = 0x80000;
+    __ro_start = .;
     .text :
     {
         KEEP(*(.text.boot)) *(.text .text.*)
@@ -15,6 +16,7 @@ SECTIONS
     {
         *(.rodata .rodata.*)
     }
+    __ro_end = .;
     . = ALIGN(4096); /* Fill up to 4KiB */
     .data :
     {

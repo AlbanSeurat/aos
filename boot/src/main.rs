@@ -8,8 +8,10 @@
 
 use cortex_a::asm;
 use cortex_a::regs::*;
+use memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
 
 mod exceptions;
+mod memory;
 
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
@@ -48,6 +50,17 @@ unsafe fn reset() -> ! {
         },
     }
     exceptions::init();
+
+    let mut tb = shared::memory::TranslationTable::new(memory::map::physical::KERN_MMU_START);
+    let level2 = match tb.alloc_table() {
+        Ok(table) => table,
+        Err(s) => {
+            debugln!("{}", s);
+            loop {}
+        }
+    };
+
+    shared::memory::mmu::init(&KERNEL_VIRTUAL_LAYOUT, &mut *level2);
 
     debugln!("write to 0x80000000000");
     core::ptr::write_volatile(0x80000000000 as *mut u64, 0);

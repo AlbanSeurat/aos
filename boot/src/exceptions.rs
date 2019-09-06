@@ -2,6 +2,7 @@ use shared::exceptions::set_vbar_el1_checked;
 use shared::exceptions::handlers::ExceptionContext;
 use register::cpu::RegisterReadWrite;
 use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1};
+use cortex_a::barrier;
 
 extern "C" {
     static __exception_vectors_start: u64;
@@ -10,6 +11,7 @@ extern "C" {
 pub unsafe fn init() {
     let exception_vectors_start: u64 = &__exception_vectors_start as *const _ as u64;
     set_vbar_el1_checked(exception_vectors_start);
+    barrier::isb(barrier::SY);
 }
 
 /// The default exceptions, invoked for every exceptions type unless the handler
