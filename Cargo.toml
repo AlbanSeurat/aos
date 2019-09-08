@@ -3,6 +3,7 @@ members = [
     "mmio",
     "boot",
     "shared",
+    "kernel",
 ]
 
 [profile.release]

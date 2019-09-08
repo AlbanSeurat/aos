@@ -8,7 +8,7 @@ use shared::memory::mapping::{Translation, Mapping, MemAttributes, Granule,
 pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
     //Boot Kernel
     Descriptor {
-        virtual_range: || RangeInclusive::new(super::map::physical::BOOT_START, super::map::physical::BOOT_END),
+        virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_STACK_START - 1),
         map : Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
@@ -19,14 +19,15 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
         },
         granule : Granule::BigPage
     },
+    //Boot Kernel
     Descriptor {
-        virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_END),
+        virtual_range: || RangeInclusive::new(super::map::physical::KERN_STACK_START, super::map::physical::KERN_STACK_END - 1),
         map : Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
                 acc_perms: AccessPermissions::ReadWriteKernel,
-                execute_never: false,
+                execute_never: true,
             },
         },
         granule : Granule::BigPage

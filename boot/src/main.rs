@@ -27,36 +27,33 @@ extern "C" {
 }
 
 const STACK_START: u64 = 0x80_000;
-const MMIO_BASE: usize = 0x3F00_0000;
-const GPIO_BASE: usize = MMIO_BASE + 0x0020_0000;
-const MBOX_BASE: usize = MMIO_BASE + 0x0000_B880;
-const UART_BASE: usize = MMIO_BASE + 0x0020_1000;
 
 unsafe fn reset() -> ! {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
-    let gpio = mmio::GPIO::new(GPIO_BASE);
-    let mut v_mbox = mmio::Mbox::new(MBOX_BASE);
-    let uart = mmio::Uart::new(UART_BASE);
+    let gpio = mmio::GPIO::new(memory::map::physical::GPIO_BASE);
+    let mut v_mbox = mmio::Mbox::new(memory::map::physical::MBOX_BASE);
+    let uart = mmio::Uart::new(memory::map::physical::UART_BASE);
 
     match uart.init(&mut v_mbox, &gpio) {
         Ok(_) => {
             mmio::LOGGER.appender(uart.into());
-            debugln!("UART is live!");
         }
         Err(_) => loop {
             cortex_a::asm::wfe() // If UART fails, abort early
         },
     }
     exceptions::init();
-
     shared::memory::mmu::init(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::BOOT_END);
 
-    debugln!("mmu is live!");
+    let bytes = include_bytes!("../../kernel-high.img");
+    core::ptr::copy(&bytes[0] as *const u8, memory::map::physical::KERN_START as *mut u8, bytes.len());
 
-    debugln!("write to 0x80000000000");
-    core::ptr::write_volatile(0x80000000000 as *mut u64, 0);
+    debugln!("jump to upper level");
+    SP.set(memory::map::virt::KERN_STACK_START as u64);
+    let upper_main: extern "C" fn() = core::mem::transmute(memory::map::virt::KERN_START);
+    upper_main();
 
     loop {}
 }

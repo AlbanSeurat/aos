@@ -12,6 +12,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aos-kernel"
+version = "0.1.0"
+dependencies = [
+ "cortex-a 2.7.0 (git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1)",
+ "mmio 0.1.0",
+ "r0 0.2.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "register 0.3.3 (registry+https://github.com/rust-lang/crates.io-index)",
+ "shared 0.1.0",
+]
+
+[[package]]
 name = "cortex-a"
 version = "2.7.0"
 source = "git+https://github.com/AlbanSeurat/cortex-a?branch=elr_el1#3fb0281f7e8ba170773c8425169530ef8028181c"
