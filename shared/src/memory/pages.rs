@@ -101,22 +101,17 @@ fn map_4k_blocks(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageT
 fn map_2M_table(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageTable, start: usize) -> Result<*mut PageTable, &'static str> {
     // align to 2M the descriptor address
     let addr_aligned = start & ALIGNED_2M;
-    let page3 = page2.entries[addr_aligned >> TWO_MIB_SHIFT];
-    if page3 != 0 {
-        return Ok(page3 as *mut PageTable);
-    } else {
-        let level3 = match tb.alloc_table() {
-            Ok(table) => table,
-            Err(s) => return Err(s)
+    let level3 = match tb.alloc_table() {
+        Ok(table) => table,
+        Err(s) => return Err(s)
+    };
+    unsafe {
+        page2.entries[addr_aligned >> TWO_MIB_SHIFT] = match TableDescriptor::new((*level3).entries.base_addr_usize()) {
+            Err(s) => return Err(s),
+            Ok(page) => page.value(),
         };
-        unsafe {
-            page2.entries[addr_aligned >> TWO_MIB_SHIFT] = match TableDescriptor::new((*level3).entries.base_addr_usize()) {
-                Err(s) => return Err(s),
-                Ok(page) => page.value(),
-            };
-        }
-        Ok(level3)
     }
+    Ok(level3)
 }
 
 fn map_2M_blocks(desc: &Descriptor, page2: &mut PageTable, start: usize, end: usize) -> Result<(), &'static str> {

@@ -51,7 +51,7 @@ unsafe fn reset() -> ! {
     }
     exceptions::init();
 
-    shared::memory::mmu::init(&KERNEL_VIRTUAL_LAYOUT, 0);
+    shared::memory::mmu::init(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::BOOT_END);
 
     debugln!("mmu is live!");
 

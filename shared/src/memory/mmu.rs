@@ -19,6 +19,7 @@ pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), 
             Ok(_) => (),
             Err(s) => return Err(s)
         };
+        debugln!("Assign LVL2 table : {:#x?}", (*level2).entries.base_addr_u64());
         // Point to the LVL2 table base address in TTBR0.
         TTBR0_EL1.set_baddr((*level2).entries.base_addr_u64());
         // Point to the LVL2 table base address in TTBR1.

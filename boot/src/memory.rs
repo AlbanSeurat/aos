@@ -8,7 +8,7 @@ pub mod map {
 
     pub mod physical {
         pub const BOOT_START:          usize =             super::START;
-        pub const BOOT_END:            usize =             0x0200_0000;
+        pub const BOOT_END:            usize =             0x0020_0000;
 
         pub const KERN_MMU_START:      usize =             0x3AC0_0000;
         pub const KERN_MMU_END:        usize =             0x3ADF_FFFF;

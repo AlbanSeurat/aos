@@ -4,3 +4,7 @@ members = [
     "boot",
     "shared",
 ]
+
+[profile.release]
+opt-level = 's'  # Controls the --opt-level the compiler builds with
+debug = true   # Controls whether the compiler passes `-g`
