@@ -2,48 +2,28 @@ use cortex_a::{barrier, regs::*};
 use crate::memory::mapping::{AttributeFields, Descriptor};
 use crate::memory::mair;
 use crate::memory::PageTable;
-use crate::memory::pages::map_descriptor;
-use crate::memory::pages::BaseAddr;
+use crate::memory::pages;
+use crate::memory::pages::{BaseAddr, TranslationTable};
 
-pub struct TranslationTable {
-    tables_base_addr: usize,
-    tables_count: usize,
-}
-
-impl TranslationTable {
-    pub fn new(tables_base_addr: usize) -> TranslationTable {
-        TranslationTable {
-            tables_base_addr,
-            tables_count: 0
-        }
-    }
-
-    pub fn alloc_table(&mut self) -> Result<*mut PageTable, &'static str> {
-        if self.tables_count < 512 {
-            let page_addr = self.tables_base_addr + self.tables_count * 0x1000;
-            self.tables_count += 1;
-            unsafe {
-                return Ok(page_addr as *mut PageTable);
-            }
-        } else {
-            return Err("Can not allocate mmu descriptors table");
-        }
-    }
-}
-pub fn init(descriptors: &[Descriptor], page2: &mut PageTable) -> Result<(), &'static str> {
+pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), &'static str> {
     // Prepare the memory attribute indirection register.
     mair::init();
 
-    for desc in descriptors.iter() {
-        map_descriptor(desc, page2);
+    let mut tb = TranslationTable::new(tables_base_addr);
+    let level2 = match tb.alloc_table() {
+        Ok(table) => table,
+        Err(s) => return Err(s)
+    };
+    unsafe {
+        match pages::init(&mut tb, &mut *level2, descriptors) {
+            Ok(_) => (),
+            Err(s) => return Err(s)
+        };
+        // Point to the LVL2 table base address in TTBR0.
+        TTBR0_EL1.set_baddr((*level2).entries.base_addr_u64());
+        // Point to the LVL2 table base address in TTBR1.
+        TTBR1_EL1.set_baddr((*level2).entries.base_addr_u64());
     }
-
-    debugln!("Assign LVL2 table : {:#x?}", page2.entries.base_addr_u64());
-
-    // Point to the LVL2 table base address in TTBR0.
-    TTBR0_EL1.set_baddr(page2.entries.base_addr_u64());
-    // Point to the LVL2 table base address in TTBR1.
-    TTBR1_EL1.set_baddr(page2.entries.base_addr_u64());
 
     // Configure various settings of stage 1 of the EL1 translation regime.
     let ips = ID_AA64MMFR0_EL1.read(ID_AA64MMFR0_EL1::PARange);

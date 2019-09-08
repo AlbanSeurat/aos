@@ -1,5 +1,12 @@
 use crate::memory::mapping::{AttributeFields, Descriptor, Granule, Translation};
-use crate::memory::translate::{Lvl2BlockDescriptor, TableDescriptor};
+use crate::memory::translate::{Lvl2BlockDescriptor, TableDescriptor, PageDescriptor};
+
+pub const NUM_ENTRIES_4KIB: usize = 512;
+const ALIGNED_2M: usize = 0xFFFFFFFFFFE00000;
+const ALIGNED_4K: usize = 0xFFFFFFFFFFFFF000;
+const TWO_MIB_SHIFT: usize = 21;
+const FOUR_KIB_SHIFT: usize = 12;
+
 
 pub trait BaseAddr {
     fn base_addr_u64(&self) -> u64;
@@ -15,10 +22,33 @@ impl BaseAddr for [u64; 512] {
     }
 }
 
-pub const NUM_ENTRIES_4KIB: usize = 512;
-const ALIGNED_2M: usize = 0xFFFFFFFFFFE00000;
-const ALIGNED_4K: usize = 0xFFFFFFFFFFFFF000;
-const TWO_MIB_SHIFT: usize = 21;
+pub struct TranslationTable {
+    tables_base_addr: usize,
+    tables_count: usize,
+}
+
+impl TranslationTable {
+    pub fn new(tables_base_addr: usize) -> TranslationTable {
+        TranslationTable {
+            tables_base_addr,
+            tables_count: 0
+        }
+    }
+
+    pub fn alloc_table(&mut self) -> Result<*mut PageTable, &'static str> {
+        if self.tables_count < 512 {
+            let page_addr = self.tables_base_addr + self.tables_count * 0x1000;
+            self.tables_count += 1;
+            unsafe {
+                let page = page_addr as *mut PageTable;
+                (*page).entries = core::mem::zeroed();
+                return Ok(page)
+            }
+        } else {
+            return Err("Can not allocate mmu descriptors table");
+        }
+    }
+}
 
 // A wrapper struct is needed here so that the align attribute can be used.
 #[repr(C)]
@@ -27,29 +57,66 @@ pub struct PageTable {
     pub entries: [u64; NUM_ENTRIES_4KIB],
 }
 
-pub fn map_descriptor(descriptor: &Descriptor, page2: &mut PageTable) -> Result<(), &'static str>{
+pub fn init(tb: & mut TranslationTable, level2: &mut PageTable, descriptors: &[Descriptor]) -> Result<(), &'static str> {
+    for desc in descriptors.iter() {
+        match map_descriptor(tb, desc, level2) {
+            Ok(_) => (),
+            Err(s) => return Err(s)
+        }
+    }
+    Ok(())
+}
+
+fn map_descriptor(tb: &mut TranslationTable, descriptor: &Descriptor, page2: &mut PageTable) -> Result<(), &'static str>{
 
     let range = (descriptor.virtual_range)();
     let start = range.start();
     let end = range.end();
 
     match descriptor.granule {
-        Granule::Regular => map_4k_block(descriptor, page2, *start),
+        Granule::Regular => map_4k_blocks(tb, descriptor, page2, *start, *end),
         Granule::BigPage => map_2M_blocks(descriptor, page2, *start, *end)
     }
 }
 
-fn map_4k_block(desc: &Descriptor, page2: &mut PageTable, start: usize) -> Result<(), &'static str> {
-    debugln!("map 4k: {:#x}", start);
-    let addr_aligned = start & ALIGNED_4K;
-    debugln!("map 4k aligned : {:#x}", addr_aligned);
-    /*
-    let page3 = match map_2M_table(desc, page2, start) {
+fn map_4k_blocks(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageTable, start: usize, end: usize) -> Result<(), &'static str> {
+    let page3 = match map_2M_table(tb, desc, page2, start) {
         Err(s) => return Err(s),
         Ok(p) => p,
-    };*/
+    };
+    let mut cur = start;
+    while cur < end {
+        unsafe {
+            match map_4k_block(desc, &mut *page3, cur, start & ALIGNED_2M) {
+                Err(s) => return Err(s),
+                Ok(i) => i,
+            }
+        }
+        cur += 1 << FOUR_KIB_SHIFT;
+    }
     // Map in Page 3 the correct segment describe (does not manage - yet - cross boundary 2M segment)
     Ok(())
+}
+
+fn map_2M_table(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageTable, start: usize) -> Result<*mut PageTable, &'static str> {
+    // align to 2M the descriptor address
+    let addr_aligned = start & ALIGNED_2M;
+    let page3 = page2.entries[addr_aligned >> TWO_MIB_SHIFT];
+    if page3 != 0 {
+        return Ok(page3 as *mut PageTable);
+    } else {
+        let level3 = match tb.alloc_table() {
+            Ok(table) => table,
+            Err(s) => return Err(s)
+        };
+        unsafe {
+            page2.entries[addr_aligned >> TWO_MIB_SHIFT] = match TableDescriptor::new((*level3).entries.base_addr_usize()) {
+                Err(s) => return Err(s),
+                Ok(page) => page.value(),
+            };
+        }
+        Ok(level3)
+    }
 }
 
 fn map_2M_blocks(desc: &Descriptor, page2: &mut PageTable, start: usize, end: usize) -> Result<(), &'static str> {
@@ -79,56 +146,18 @@ fn map_2M_block(desc: &Descriptor, page2: &mut PageTable, start: usize) -> Resul
     page2.entries[addr_aligned >> TWO_MIB_SHIFT] = page_desc.value();
     Ok(())
 }
-/*
-fn map_2M_table(desc: &Descriptor, page2: &mut PageTable, start: usize) -> Result<PageTable, &'static str> {
-    // align to 2M the descriptor address
-    debugln!("map 2M: {:#x}", start);
-    let addr_aligned = start & ALIGNED_2M;
-    debugln!("map 2M aligned : {:#x}", addr_aligned);
-    page2.entries[addr_aligned >> TWO_MIB_SHIFT] = match TableDescriptor::new(page3.entries.base_addr_usize()) {
+
+fn map_4k_block(desc: &Descriptor, page3: &mut PageTable, start: usize, segment: usize) -> Result<(), &'static str> {
+    let addr_aligned = (start - segment) & ALIGNED_4K;
+
+    let output_addr = match desc.map.translation {
+        Translation::Identity => addr_aligned,
+        Translation::Offset(a) => a + (addr_aligned - start),
+    };
+    let page_desc = match PageDescriptor::new(output_addr, desc.map.attribute_fields) {
         Err(s) => return Err(s),
-        Ok(page) => page.value(),
+        Ok(desc) => desc,
     };
-    Ok(page3)
+    page3.entries[addr_aligned >> FOUR_KIB_SHIFT] = page_desc.value();
+    Ok(())
 }
-*/
-/*
-pub fn user_2M_page_mapping(desc : &Descriptor, virt_addr: usize) -> Option<Lvl2BlockDescriptor> {
-
-    let option= match get_user_virt_addr_properties(desc, virt_addr) {
-        Err(s) => panic!(s),
-        Ok(i) => i,
-    };
-
-    return mapDescriptorToBlock(option);
-}
-
-
-fn mapDescriptorToBlock(option: Option<(usize, AttributeFields)>) -> Option<Lvl2BlockDescriptor> {
-    if option.is_some() {
-        let (output_addr, attribute_fields) = option.unwrap();
-        let page_desc = match Lvl2BlockDescriptor::new(output_addr, attribute_fields) {
-            Err(s) => panic!(s),
-            Ok(desc) => desc,
-        };
-        return Some(page_desc)
-    } else {
-        return None
-    }
-}
-
-
-fn get_layout_properties(descriptor : &Descriptor, virt_addr : usize) -> Option<(usize, AttributeFields)> {
-    if descriptor.map.is_some() {
-        let mapping = descriptor.map.unwrap();
-        let output_addr = match mapping.translation {
-            Translation::Identity => virt_addr,
-            Translation::Offset(a) => a + (virt_addr - (descriptor.virtual_range)().start()),
-        };
-        return Some((output_addr, mapping.attribute_fields))
-    } else {
-        return None
-    }
-}
-
-*/

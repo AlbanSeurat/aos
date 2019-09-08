@@ -1,7 +1,5 @@
 pub mod descriptors;
 
-use shared::memory::{PageTable, NUM_ENTRIES_4KIB};
-
 /// System memory map.
 #[rustfmt::skip]
 pub mod map {
@@ -9,11 +7,8 @@ pub mod map {
     pub const END:                     usize =             0x3FFF_FFFF;
 
     pub mod physical {
-        pub const MMIO_BASE:           usize =             0x3F00_0000;
-        pub const VIDEOCORE_MBOX_BASE: usize = MMIO_BASE + 0x0000_B880;
-        pub const GPIO_BASE:           usize = MMIO_BASE + 0x0020_0000;
-        pub const UART_BASE:           usize = MMIO_BASE + 0x0020_1000;
-        pub const MMIO_END:            usize =             super::END;
+        pub const BOOT_START:          usize =             super::START;
+        pub const BOOT_END:            usize =             0x0200_0000;
 
         pub const KERN_MMU_START:      usize =             0x3AC0_0000;
         pub const KERN_MMU_END:        usize =             0x3ADF_FFFF;
@@ -26,6 +21,13 @@ pub mod map {
 
         pub const GPU_BASE:            usize =             0x3B00_0000;
         pub const GPU_END:             usize =             0x3EFF_FFFF;
+
+        pub const MMIO_BASE:           usize =             0x3F00_0000;
+        pub const VIDEOCORE_MBOX_BASE: usize = MMIO_BASE + 0x0000_B880;
+        pub const GPIO_BASE:           usize = MMIO_BASE + 0x0020_0000;
+        pub const UART_BASE:           usize = MMIO_BASE + 0x0020_1000;
+        pub const MMIO_END:            usize =             super::END;
+
     }
 
     pub mod virt {

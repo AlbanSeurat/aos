@@ -5,9 +5,22 @@ use shared::memory::mapping::{Translation, Mapping, MemAttributes, Granule,
 /// A virtual memory layout that is agnostic of the paging granularity that the
 /// hardware MMU will use.
 ///
-pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 3] = [
+pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
+    //Boot Kernel
+    Descriptor {
+        virtual_range: || RangeInclusive::new(super::map::physical::BOOT_START, super::map::physical::BOOT_END),
+        map : Mapping {
+            translation: Translation::Identity,
+            attribute_fields: AttributeFields {
+                mem_attributes: MemAttributes::CacheableDRAM,
+                acc_perms: AccessPermissions::ReadWriteKernel,
+                execute_never: false,
+            },
+        },
+        granule : Granule::BigPage
+    },
     // Kernel code and RO data
-    /*Descriptor {
+    Descriptor {
         virtual_range: || {
             extern "C" {
                 static __ro_start: u64;
@@ -68,18 +81,6 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 3] = [
             },
         },
         granule : Granule::Regular
-    },*/
-    Descriptor {
-        virtual_range: || RangeInclusive::new(super::map::START, super::map::physical::KERN_END),
-        map : Mapping {
-            translation: Translation::Identity,
-            attribute_fields: AttributeFields {
-                mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWriteKernel,
-                execute_never: false,
-            },
-        },
-        granule : Granule::BigPage
     },
     // GPU Ram
     Descriptor {
