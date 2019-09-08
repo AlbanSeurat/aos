@@ -74,7 +74,7 @@ __exception_vectors_start:
     FIQ_DUMMY                                                       // 0x300
     SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // current_elx_serror        // 0x380
 
-    SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // lower_aarch64_synchronous // 0x400
+    SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE lower_aarch64_synchronous // 0x400
     SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // lower_aarch64_irq         // 0x480
     FIQ_DUMMY                                                       // 0x500
     SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE default_exception_handler // lower_aarch64_serror      // 0x580

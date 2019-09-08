@@ -10,6 +10,9 @@ pub mod map {
         pub const BOOT_START:          usize =             super::START;
         pub const BOOT_END:            usize =             0x0020_0000;
 
+        pub const KERN_MMU_START:      usize =             0x3AC0_0000;
+        pub const KERN_MMU_END:        usize =             0x3ADF_FFFF;
+
         pub const KERN_START:          usize =             0x3AE0_0000;
         pub const KERN_END:            usize =             0x3AFF_FFFF;
 

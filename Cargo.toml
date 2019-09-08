@@ -1,9 +1,9 @@
 [workspace]
 members = [
     "mmio",
-    "boot",
     "shared",
     "kernel",
+    "boot",
 ]
 
 [profile.release]

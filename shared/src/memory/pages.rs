@@ -80,14 +80,15 @@ fn map_descriptor(tb: &mut TranslationTable, descriptor: &Descriptor, page2: &mu
 }
 
 fn map_4k_blocks(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageTable, start: usize, end: usize) -> Result<(), &'static str> {
-    let page3 = match map_2M_table(tb, desc, page2, start) {
+    let segment = start & ALIGNED_2M;
+    let page3 = match map_2M_table(tb, desc, page2, segment) {
         Err(s) => return Err(s),
         Ok(p) => p,
     };
     let mut cur = start;
     while cur < end {
         unsafe {
-            match map_4k_block(desc, &mut *page3, cur, start & ALIGNED_2M) {
+            match map_4k_block(desc, &mut *page3, cur, segment) {
                 Err(s) => return Err(s),
                 Ok(i) => i,
             }
@@ -98,21 +99,40 @@ fn map_4k_blocks(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageT
     Ok(())
 }
 
-fn map_2M_table(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageTable, start: usize) -> Result<*mut PageTable, &'static str> {
+fn map_2M_table(tb: &mut TranslationTable, desc: &Descriptor, page2: &mut PageTable, segment: usize) -> Result<*mut PageTable, &'static str> {
     // align to 2M the descriptor address
-    let addr_aligned = start & ALIGNED_2M;
-    let level3 = match tb.alloc_table() {
-        Ok(table) => table,
-        Err(s) => return Err(s)
-    };
-    unsafe {
-        page2.entries[addr_aligned >> TWO_MIB_SHIFT] = match TableDescriptor::new((*level3).entries.base_addr_usize()) {
-            Err(s) => return Err(s),
-            Ok(page) => page.value(),
+    let page3 = page2.entries[segment >> TWO_MIB_SHIFT];
+    if page3 & 3 == 3 {
+        return Ok((page3 - 3) as *mut PageTable);
+    } else {
+        let level3 = match tb.alloc_table() {
+            Ok(table) => table,
+            Err(s) => return Err(s)
         };
+        unsafe {
+            page2.entries[segment >> TWO_MIB_SHIFT] = match TableDescriptor::new((*level3).entries.base_addr_usize()) {
+                Err(s) => return Err(s),
+                Ok(table) => table.value(),
+            };
+        }
+        Ok(level3)
     }
-    Ok(level3)
 }
+
+fn map_4k_block(desc: &Descriptor, page3: &mut PageTable, start: usize, segment: usize) -> Result<(), &'static str> {
+    let addr_aligned = start & ALIGNED_4K;
+    let output_addr = match desc.map.translation {
+        Translation::Identity => addr_aligned,
+        Translation::Offset(a) => a + (addr_aligned - start),
+    };
+    let page_desc = match PageDescriptor::new(output_addr, desc.map.attribute_fields) {
+        Err(s) => return Err(s),
+        Ok(desc) => desc,
+    };
+    page3.entries[(addr_aligned - segment) >> FOUR_KIB_SHIFT] = page_desc.value();
+    Ok(())
+}
+
 
 fn map_2M_blocks(desc: &Descriptor, page2: &mut PageTable, start: usize, end: usize) -> Result<(), &'static str> {
     let mut cur = start;
@@ -139,20 +159,5 @@ fn map_2M_block(desc: &Descriptor, page2: &mut PageTable, start: usize) -> Resul
         Ok(desc) => desc,
     };
     page2.entries[addr_aligned >> TWO_MIB_SHIFT] = page_desc.value();
-    Ok(())
-}
-
-fn map_4k_block(desc: &Descriptor, page3: &mut PageTable, start: usize, segment: usize) -> Result<(), &'static str> {
-    let addr_aligned = (start - segment) & ALIGNED_4K;
-
-    let output_addr = match desc.map.translation {
-        Translation::Identity => addr_aligned,
-        Translation::Offset(a) => a + (addr_aligned - start),
-    };
-    let page_desc = match PageDescriptor::new(output_addr, desc.map.attribute_fields) {
-        Err(s) => return Err(s),
-        Ok(desc) => desc,
-    };
-    page3.entries[addr_aligned >> FOUR_KIB_SHIFT] = page_desc.value();
     Ok(())
 }

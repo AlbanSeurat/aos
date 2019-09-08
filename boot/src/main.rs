@@ -47,15 +47,15 @@ unsafe fn reset() -> ! {
     exceptions::init();
     shared::memory::mmu::init(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::BOOT_END);
 
+    // TODO : receive kernel thru other methods
     let bytes = include_bytes!("../../kernel-high.img");
     core::ptr::copy(&bytes[0] as *const u8, memory::map::physical::KERN_START as *mut u8, bytes.len());
 
     debugln!("jump to upper level");
     SP.set(memory::map::virt::KERN_STACK_START as u64);
-    let upper_main: extern "C" fn() = core::mem::transmute(memory::map::virt::KERN_START);
-    upper_main();
+    let upper_main: extern "C" fn() -> ! = core::mem::transmute(memory::map::virt::KERN_START);
 
-    loop {}
+    upper_main()
 }
 
 #[inline]

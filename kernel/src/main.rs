@@ -10,6 +10,7 @@ use cortex_a::regs::*;
 use memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
 
 mod memory;
+mod exceptions;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -23,7 +24,6 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
     asm::wfe();
     loop {}
 }
-
 
 /// Entrypoint of the kernel.
 ///
@@ -40,6 +40,14 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 
     mmio::LOGGER.appender(uart.into());
     debugln!("UART live in upper level");
+
+    exceptions::init();
+    shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::KERN_MMU_START);
+    shared::memory::mmu::reset_user_tables();
+
+    SP_EL0.set(0x00200000);
+    ELR_EL1.set(0);
+    asm::eret();
 
     loop {}
 }

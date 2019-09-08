@@ -6,7 +6,7 @@ use shared::memory::mapping::{Translation, Mapping, MemAttributes, Granule,
 /// hardware MMU will use.
 ///
 pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
-    //Boot Kernel
+    //Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_STACK_START - 1),
         map : Mapping {
@@ -17,9 +17,9 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
                 execute_never: false,
             },
         },
-        granule : Granule::BigPage
+        granule : Granule::Regular
     },
-    //Boot Kernel
+    //Stack Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_STACK_START, super::map::physical::KERN_STACK_END - 1),
         map : Mapping {
@@ -30,7 +30,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
                 execute_never: true,
             },
         },
-        granule : Granule::BigPage
+        granule : Granule::Regular
     },
     // GPU Ram
     Descriptor {

@@ -9,21 +9,15 @@ pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), 
     // Prepare the memory attribute indirection register.
     mair::init();
 
-    let mut tb = TranslationTable::new(tables_base_addr);
-    let level2 = match tb.alloc_table() {
-        Ok(table) => table,
+    let base_addr = match new_tables(descriptors, tables_base_addr) {
+        Ok(addr) => addr,
         Err(s) => return Err(s)
     };
     unsafe {
-        match pages::init(&mut tb, &mut *level2, descriptors) {
-            Ok(_) => (),
-            Err(s) => return Err(s)
-        };
-        debugln!("Assign LVL2 table : {:#x?}", (*level2).entries.base_addr_u64());
         // Point to the LVL2 table base address in TTBR0.
-        TTBR0_EL1.set_baddr((*level2).entries.base_addr_u64());
+        TTBR0_EL1.set_baddr(base_addr);
         // Point to the LVL2 table base address in TTBR1.
-        TTBR1_EL1.set_baddr((*level2).entries.base_addr_u64());
+        TTBR1_EL1.set_baddr(base_addr);
     }
 
     // Configure various settings of stage 1 of the EL1 translation regime.
@@ -60,6 +54,40 @@ pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), 
     unsafe{
         barrier::isb(barrier::SY);
     }
-
     Ok(())
+}
+
+pub fn reset_user_tables () {
+    TTBR0_EL1.set_baddr(0);
+}
+
+pub fn setup_kernel_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(()), &'static str> {
+    let base_addr = match new_tables(descriptors, tables_base_addr) {
+        Ok(addr) => addr,
+        Err(s) => return Err(s)
+    };
+    unsafe {
+        TTBR1_EL1.set_baddr(base_addr);
+        Ok(())
+    }
+}
+
+fn new_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(u64), &'static str> {
+
+    let mut tb = TranslationTable::new(tables_base_addr);
+    let level2 = match tb.alloc_table() {
+        Ok(table) => table,
+        Err(s) => return Err(s)
+    };
+
+    unsafe {
+        match pages::init(&mut tb, &mut *level2, descriptors) {
+            Ok(_) => (),
+            Err(s) => return Err(s)
+        };
+        // Force MMU init to complete before next instruction
+        barrier::isb(barrier::SY);
+
+        Ok((*level2).entries.base_addr_u64())
+    }
 }
