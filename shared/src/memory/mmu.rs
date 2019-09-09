@@ -68,6 +68,22 @@ pub fn setup_kernel_tables(descriptors: &[Descriptor], tables_base_addr : usize)
     };
     unsafe {
         TTBR1_EL1.set_baddr(base_addr);
+        TTBR0_EL1.set_baddr(base_addr);
+        // Force MMU init to complete before next instruction
+        barrier::isb(barrier::SY);
+        Ok(())
+    }
+}
+
+pub fn setup_user_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(()), &'static str> {
+    let base_addr = match new_tables(descriptors, tables_base_addr) {
+        Ok(addr) => addr,
+        Err(s) => return Err(s)
+    };
+    unsafe {
+        TTBR0_EL1.set_baddr(base_addr);
+        // Force MMU init to complete before next instruction
+        barrier::isb(barrier::SY);
         Ok(())
     }
 }
@@ -79,15 +95,12 @@ fn new_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(u
         Ok(table) => table,
         Err(s) => return Err(s)
     };
-
+    debugln!("table {:p}", level2);
     unsafe {
         match pages::init(&mut tb, &mut *level2, descriptors) {
             Ok(_) => (),
             Err(s) => return Err(s)
         };
-        // Force MMU init to complete before next instruction
-        barrier::isb(barrier::SY);
-
         Ok((*level2).entries.base_addr_u64())
     }
 }

@@ -5,7 +5,20 @@ use shared::memory::mapping::{Translation, Mapping, MemAttributes, Granule,
 /// A virtual memory layout that is agnostic of the paging granularity that the
 /// hardware MMU will use.
 ///
-pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
+pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
+    //User MMU
+    Descriptor {
+        virtual_range: || RangeInclusive::new(super::map::physical::USER_MMU_START, super::map::physical::USER_MMU_END - 1),
+        map : Mapping {
+            translation: Translation::Identity,
+            attribute_fields: AttributeFields {
+                mem_attributes: MemAttributes::CacheableDRAM,
+                acc_perms: AccessPermissions::ReadWriteKernel,
+                execute_never: true,
+            },
+        },
+        granule : Granule::BigPage
+    },
     //Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_STACK_START - 1),
@@ -58,4 +71,19 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
         },
         granule : Granule::BigPage
     },
+];
+
+pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 1] = [
+    Descriptor {
+        virtual_range: || RangeInclusive::new(super::map::physical::PROG_START, super::map::physical::PROG_END - 1),
+        map : Mapping {
+            translation: Translation::Identity,
+            attribute_fields: AttributeFields {
+                mem_attributes: MemAttributes::CacheableDRAM,
+                acc_perms: AccessPermissions::ReadWriteUser,
+                execute_never: false,
+            },
+        },
+        granule : Granule::Regular
+    }
 ];

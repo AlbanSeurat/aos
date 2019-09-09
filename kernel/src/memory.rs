@@ -7,6 +7,11 @@ pub mod map {
     pub const END:                     usize =             0x3FFF_FFFF;
 
     pub mod physical {
+        pub const PROG_START:          usize =             0x0020_0000;
+        pub const PROG_END:            usize =             0x0040_0000;
+
+        pub const USER_MMU_START:      usize =             0x3AA0_0000;
+        pub const USER_MMU_END:        usize =             0x3ABF_FFFF;
 
         pub const KERN_MMU_START:      usize =             0x3AC0_0000;
         pub const KERN_MMU_END:        usize =             0x3ADF_FFFF;

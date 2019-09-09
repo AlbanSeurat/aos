@@ -7,7 +7,7 @@ mod delays;
 mod gpio;
 mod mbox;
 mod uart;
-mod logger;
+pub mod logger;
 pub mod macros;
 
 pub static mut LOGGER: Logger = Logger::new();

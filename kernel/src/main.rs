@@ -7,7 +7,7 @@
 #[macro_use] extern crate mmio;
 use cortex_a::asm;
 use cortex_a::regs::*;
-use memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
+use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
 
 mod memory;
 mod exceptions;
@@ -43,10 +43,17 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 
     exceptions::init();
     shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::KERN_MMU_START);
-    shared::memory::mmu::reset_user_tables();
+    shared::memory::mmu::setup_user_tables(&PROGRAM_VIRTUAL_LAYOUT, memory::map::physical::USER_MMU_START);
+    debugln!("MMU re-configured");
 
-    SP_EL0.set(0x00200000);
-    ELR_EL1.set(0);
+    let bytes = include_bytes!("../../program.img");
+    debugln!("copying program from {:p} to {:#x} with len {}", &bytes[0] as *const u8, memory::map::physical::PROG_START, bytes.len());
+    core::ptr::copy(&bytes[0] as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
+
+    debugln!("JUMP to program");
+
+    SP_EL0.set(0x00400000);
+    ELR_EL1.set(memory::map::physical::PROG_START as u64);
     asm::eret();
 
     loop {}

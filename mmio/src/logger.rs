@@ -17,6 +17,7 @@ impl Appender for NullLogger {}
 pub enum Output {
     None(NullLogger),
     Uart(Uart),
+    Syscall(SysCall)
 }
 
 impl Logger {

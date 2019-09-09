@@ -2,6 +2,7 @@
 members = [
     "mmio",
     "shared",
+    "program",
     "kernel",
     "boot",
 ]
