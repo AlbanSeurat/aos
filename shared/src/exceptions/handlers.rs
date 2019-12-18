@@ -3,7 +3,7 @@ global_asm!(include_str!("vectors.S"));
 #[repr(C)]
 #[derive(Debug)]
 pub struct GPR {
-    x: [u64; 31],
+    pub x: [u64; 31],
 }
 
 #[repr(C)]

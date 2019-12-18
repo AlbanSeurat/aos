@@ -1,6 +1,7 @@
 use core::fmt;
 use core::ops::Deref;
 use crate::uart::Uart;
+use crate::syscall::SysCall;
 
 pub struct Logger {
     output: Output,
@@ -17,7 +18,7 @@ impl Appender for NullLogger {}
 pub enum Output {
     None(NullLogger),
     Uart(Uart),
-    Syscall(SysCall)
+    Syscall(SysCall),
 }
 
 impl Logger {
@@ -38,13 +39,21 @@ impl From<Uart> for Output {
     }
 }
 
+impl From<SysCall> for Output {
+    fn from(instance: SysCall) -> Self {
+        Output::Syscall(instance)
+    }
+}
+
+
 impl Deref for Logger {
     type Target = dyn Appender;
 
     fn deref(&self) -> &Self::Target {
         match &self.output {
             Output::None(i) => i,
-            Output::Uart(i) => i
+            Output::Uart(i) => i,
+            Output::Syscall(i ) => i,
         }
     }
 }

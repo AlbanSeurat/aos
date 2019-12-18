@@ -6,7 +6,7 @@
 
 #[macro_use] extern crate mmio;
 use cortex_a::asm;
-use mmio::logger::Appender;
+use mmio::syscall::SysCall;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -22,35 +22,21 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
 }
 
 
-struct SysCall {
-    number: u16
-}
-
-impl Appender for SysCall {
-
-    /// Display a string
-    fn puts(&self, string: &str) {
-        unsafe { asm!("SVC 10"); }
-    }
-
-}
-
-
-
-
 /// Entrypoint of the kernel.
 ///
 /// No need to park other processor it has been done by boot.c
 #[link_section = ".text.start"]
 #[no_mangle]
-pub unsafe extern "C" fn _main() -> ! {
+pub unsafe extern "C" fn _main() -> () {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
-    let syscall = SysCall { number : 10 };
+    let syscall = SysCall { };
     mmio::LOGGER.appender(syscall.into());
 
     debugln!("show a message using SCV call");
 
-    loop {}
+    loop {
+        asm::wfe();
+    }
 }
