@@ -3,10 +3,12 @@
 #![feature(asm)]
 #![feature(core_intrinsics)]
 #![feature(global_asm)]
+#![feature(duration_constants)]
 
 #[macro_use] extern crate mmio;
 use cortex_a::asm;
 use mmio::syscall::SysCall;
+use core::time::Duration;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -29,12 +31,17 @@ pub unsafe extern "C" fn _main() -> () {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
-    let syscall = SysCall { };
-    mmio::LOGGER.appender(syscall.into());
+    mmio::LOGGER.appender(SysCall { }.into());
 
     debugln!("show a message using SCV call");
+
+    let syscall = SysCall { };
+    syscall.sleep(3);
+
+    debugln!("show a second message after three second");
 
     loop {
         asm::wfe();
     }
+
 }

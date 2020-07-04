@@ -100,16 +100,6 @@ pub struct Mbox {
     pub base_addr: usize,
 }
 
-/// Deref to RegisterBlock
-///
-/// Allows writing
-/// ```
-/// self.STATUS.read()
-/// ```
-/// instead of something along the lines of
-/// ```
-/// unsafe { (*Mbox::ptr()).STATUS.read() }
-/// ```
 impl ops::Deref for Mbox {
     type Target = RegisterBlock;
 

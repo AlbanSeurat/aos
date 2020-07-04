@@ -1,6 +1,7 @@
 use crate::logger::Appender;
 
 pub struct SysCall {
+
 }
 
 impl Appender for SysCall {
@@ -14,4 +15,14 @@ impl Appender for SysCall {
         }
     }
 
+}
+
+impl SysCall {
+
+    pub fn sleep(&self, secs: u64) {
+        unsafe {
+            llvm_asm!("mov x0, $0" :: "r"(secs));
+            llvm_asm!("SVC 2");
+        }
+    }
 }
