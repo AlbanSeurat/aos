@@ -39,5 +39,6 @@ pub mod map {
         pub const MBOX_BASE:           usize = MMIO_BASE + 0x0000_B880;
         pub const GPIO_BASE:           usize = MMIO_BASE + 0x0020_0000;
         pub const UART_BASE:           usize = MMIO_BASE + 0x0020_1000;
+        pub const USB_BASE:            usize = MMIO_BASE + 0x0098_0000;
     }
 }

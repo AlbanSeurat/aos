@@ -22,9 +22,7 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
 }
 
 
-/// Entrypoint of the kernel.
-///
-/// No need to park other processor it has been done by boot.c
+/// Entrypoint of the program
 #[link_section = ".text.start"]
 #[no_mangle]
 pub unsafe extern "C" fn _main() -> () {

@@ -11,6 +11,7 @@ use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
 
 mod memory;
 mod exceptions;
+mod scheduler;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -26,8 +27,6 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
 }
 
 /// Entrypoint of the kernel.
-///
-/// No need to park other processor it has been done by boot.c
 #[link_section = ".text.boot"]
 #[no_mangle]
 pub unsafe extern "C" fn _upper_kernel() -> ! {
@@ -37,18 +36,23 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     let gpio = mmio::GPIO::new(memory::map::virt::GPIO_BASE);
     let mut v_mbox = mmio::Mbox::new(memory::map::virt::MBOX_BASE);
     let uart = mmio::Uart::new(memory::map::virt::UART_BASE);
+    let dwhci = mmio::DWHCI::new(memory::map::virt::USB_BASE);
 
     mmio::LOGGER.appender(uart.into());
     debugln!("UART live in upper level");
 
     exceptions::init();
+    debugln!("Exception Handling initialized");
+
     shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::KERN_MMU_START);
     shared::memory::mmu::setup_user_tables(&PROGRAM_VIRTUAL_LAYOUT, memory::map::physical::USER_MMU_START);
     debugln!("MMU re-configured");
 
     let bytes = include_bytes!("../../program.img");
-    debugln!("copying program from {:p} to {:#x} with len {}", &bytes[0] as *const u8, memory::map::physical::PROG_START, bytes.len());
-    core::ptr::copy(&bytes[0] as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
+    debugln!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
+    core::ptr::copy(bytes as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
+
+    scheduler::timer::Timer::init();
 
     debugln!("JUMP to program");
 

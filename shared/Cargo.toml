@@ -8,5 +8,5 @@ edition = "2018"
 
 [dependencies]
 mmio = { path = "../mmio" }
-cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "elr_el1" }
-register = "0.3.3"
+cortex-a = "3.0.4"
+register = "0.5.1"

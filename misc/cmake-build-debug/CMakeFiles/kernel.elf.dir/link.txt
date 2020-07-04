@@ -1,1 +1,0 @@
-aarch64-none-elf-gcc -T linker.ld -ffreestanding -O2 -nostdlib -lgcc CMakeFiles/kernel.elf.dir/src/boot.s.o CMakeFiles/kernel.elf.dir/src/boot.c.o CMakeFiles/kernel.elf.dir/src/io/uart.c.o CMakeFiles/kernel.elf.dir/src/util/kprintf.c.o -o out/kernel.elf

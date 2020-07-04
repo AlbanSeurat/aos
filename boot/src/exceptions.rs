@@ -1,6 +1,7 @@
 use shared::exceptions::set_vbar_el1_checked;
 use shared::exceptions::handlers::ExceptionContext;
 use register::cpu::RegisterReadWrite;
+use register::cpu::RegisterReadOnly;
 use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1};
 use cortex_a::barrier;
 
@@ -31,6 +32,12 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
 #[no_mangle]
 unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
     debugln!("Synchronous exception current EL");
+    debug_halt(e);
+}
+
+#[no_mangle]
+unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
+    debugln!("Current IRQ handling");
     debug_halt(e);
 }
 

@@ -49,7 +49,7 @@ unsafe fn reset() -> ! {
 
     // TODO : receive kernel thru other methods
     let bytes = include_bytes!("../../kernel-high.img");
-    core::ptr::copy(&bytes[0] as *const u8, memory::map::physical::KERN_START as *mut u8, bytes.len());
+    core::ptr::copy(bytes as *const u8, memory::map::physical::KERN_START as *mut u8, bytes.len());
 
     debugln!("jump to upper level");
     SP.set(memory::map::virt::KERN_STACK_START as u64);

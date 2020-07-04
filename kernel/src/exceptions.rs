@@ -1,6 +1,7 @@
 use shared::exceptions::set_vbar_el1_checked;
 use shared::exceptions::handlers::ExceptionContext;
 use register::cpu::RegisterReadWrite;
+use register::cpu::RegisterReadOnly;
 use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1};
 use cortex_a::{barrier, asm};
 use core::str::{from_utf8, from_utf8_unchecked};
@@ -21,6 +22,12 @@ pub unsafe fn init() {
 #[no_mangle]
 unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
     debugln!("Unknown Exception Context");
+    debug_halt(e);
+}
+
+#[no_mangle]
+unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
+    debugln!("Current IRQ handling");
     debug_halt(e);
 }
 

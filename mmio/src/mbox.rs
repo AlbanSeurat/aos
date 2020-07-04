@@ -136,7 +136,7 @@ impl Mbox {
                 break;
             }
 
-            unsafe { asm!("nop" :::: "volatile") };
+            unsafe { llvm_asm!("nop" :::: "volatile") };
         }
 
         let buf_ptr = self.buffer.as_ptr() as u32;
@@ -152,7 +152,7 @@ impl Mbox {
                     break;
                 }
 
-                unsafe { asm!("nop" :::: "volatile") };
+                unsafe { llvm_asm!("nop" :::: "volatile") };
             }
 
             let resp: u32 = self.READ.get();

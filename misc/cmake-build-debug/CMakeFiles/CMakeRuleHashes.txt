@@ -1,2 +1,0 @@
-# Hashes of file build rules.
-57e7f0d9005ffb878d6adae2b14010c4 CMakeFiles/kernel8.img

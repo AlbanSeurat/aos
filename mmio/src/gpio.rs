@@ -31,7 +31,7 @@ register_bitfields! {
     u32,
 
     /// GPIO Function Select 1
-    GPFSEL1 [
+    pub GPFSEL1 [
         /// Pin 15
         FSEL15 OFFSET(15) NUMBITS(3) [
             Input = 0b000,
@@ -51,7 +51,7 @@ register_bitfields! {
     ],
 
     /// GPIO Pull-up/down Clock Register 0
-    GPPUDCLK0 [
+    pub GPPUDCLK0 [
         /// Pin 15
         PUDCLK15 OFFSET(15) NUMBITS(1) [
             NoEffect = 0,
