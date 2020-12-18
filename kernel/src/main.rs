@@ -4,12 +4,14 @@
 #![feature(core_intrinsics)]
 #![feature(global_asm)]
 #![feature(duration_constants)]
+#![feature(llvm_asm)]
 
 #[macro_use] extern crate mmio;
 use cortex_a::asm;
 use cortex_a::regs::*;
 use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
 use core::time::Duration;
+use mmio::{Timer, IRQ};
 
 mod memory;
 mod exceptions;
@@ -55,9 +57,8 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     core::ptr::copy(bytes as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
 
     debugln!("wait one second");
-
-    let timer = mmio::Timer {};
-    timer.sleep(Duration::SECOND);
+    Timer::sleep(Duration::SECOND);
+    Timer::reset_counter(Duration::SECOND);
 
     debugln!("JUMP to program");
 

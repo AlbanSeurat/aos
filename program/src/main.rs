@@ -30,7 +30,6 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
 pub unsafe extern "C" fn _main() -> () {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
-
     mmio::LOGGER.appender(SysCall { }.into());
 
     debugln!("show a message using SCV call");

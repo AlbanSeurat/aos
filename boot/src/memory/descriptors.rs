@@ -68,5 +68,5 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
             },
         },
         granule : Granule::BigPage
-    },
+    }
 ];
