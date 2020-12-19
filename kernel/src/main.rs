@@ -55,11 +55,7 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     let bytes = include_bytes!("../../program.img");
     debugln!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
     core::ptr::copy(bytes as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
-
-    debugln!("wait one second");
-    Timer::sleep(Duration::SECOND);
-    Timer::reset_counter(Duration::SECOND);
-
+    
     debugln!("JUMP to program");
 
     SP_EL0.set(0x00400000);
