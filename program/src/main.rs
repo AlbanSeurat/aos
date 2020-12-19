@@ -39,8 +39,8 @@ pub unsafe extern "C" fn _main() -> () {
 
     debugln!("show a second message after three second");
 
+    syscall.halt();
     loop {
         asm::wfe();
     }
-
 }

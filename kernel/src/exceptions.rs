@@ -42,6 +42,7 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
         match ESR_EL1.read(ESR_EL1::ISS) {
             1 => syscalls::syscall_one(e.gpr.x[0] as *const u8, e.gpr.x[1] as usize),
             2 => syscalls::syscall_two(e.gpr.x[0] as u64),
+            3 => syscalls::syscall_three(),
             _ => ()
         }
     } else {

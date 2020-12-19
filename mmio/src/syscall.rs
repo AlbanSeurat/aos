@@ -25,4 +25,10 @@ impl SysCall {
             llvm_asm!("SVC 2");
         }
     }
+
+    pub fn halt(&self) {
+        unsafe {
+            llvm_asm!("SVC 3");
+        }
+    }
 }

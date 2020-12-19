@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 mmio = { path = "../mmio" }
 shared = { path = "../shared" }
+qemu-exit = "1.0.0"
 cortex-a = "3.0.4"
 register = "0.5.1"
 r0 = "1.0.0"

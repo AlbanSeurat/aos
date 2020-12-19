@@ -17,6 +17,7 @@ version = "0.1.0"
 dependencies = [
  "cortex-a",
  "mmio",
+ "qemu-exit",
  "r0",
  "register",
  "shared",
@@ -49,6 +50,12 @@ dependencies = [
  "cortex-a",
  "register",
 ]
+
+[[package]]
+name = "qemu-exit"
+version = "1.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b73ae13954572c7ca0ec48ba9fe6a59c0392066eba62f8cb384ffd5addf538c5"
 
 [[package]]
 name = "r0"

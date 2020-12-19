@@ -16,7 +16,7 @@ pub struct RegisterBlock {
     DISABLE_BASIC_IRQS: ReadWrite<u32>, // 0x24
 }
 
-/// Public interface to the GPIO MMIO area
+/// Public interface to the IRQ area
 pub struct IRQ {
     base_addr: usize,
 }
