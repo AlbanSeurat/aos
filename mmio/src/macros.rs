@@ -17,12 +17,9 @@ macro_rules! debugln {
 
 #[doc(hidden)]
 pub fn _debug(args: Arguments) {
-
-    // TODO : should be replace by a real lock (once we have multiple thread)
     unsafe {
         LOGGER.write_fmt(args).unwrap();
     }
-
 }
 
 #[macro_export]

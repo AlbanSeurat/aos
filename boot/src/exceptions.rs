@@ -1,8 +1,7 @@
 use shared::exceptions::set_vbar_el1_checked;
 use shared::exceptions::handlers::ExceptionContext;
-use register::cpu::RegisterReadWrite;
-use register::cpu::RegisterReadOnly;
-use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1};
+use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1, RegisterReadWrite, RegisterReadOnly};
+use qemu_exit::QEMUExit;
 use cortex_a::barrier;
 
 extern "C" {
@@ -41,14 +40,21 @@ unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
     debug_halt(e);
 }
 
+#[no_mangle]
+unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) {
+    debugln!("Lower aarch64 IRQ handling");
+    debug_halt(e);
+}
+
+
 fn debug_halt(e: &ExceptionContext) {
+    debugln!("Kernel Panic ! ");
     debugln!("GPR : {:x?}", e.gpr);
     debugln!("ESR : {:#x?}/{:#x?}", ESR_EL1.read(ESR_EL1::EC), ESR_EL1.get());
     debugln!("FAR : {:#x?}", FAR_EL1.get());
     debugln!("ELR : {:#x?}", e.elr_el1);
     debugln!("PSTATE: {:#x?}", SPSR_EL1.get());
 
-    loop {
-        cortex_a::asm::wfe()
-    }
+    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
+    QEMU_EXIT_HANDLE.exit_failure();
 }

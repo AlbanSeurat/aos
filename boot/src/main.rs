@@ -45,17 +45,26 @@ unsafe fn reset() -> ! {
         },
     }
     exceptions::init();
-    shared::memory::mmu::init(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::BOOT_END);
+    match setup_mmu() {
+
+        Err(err) => panic!("setup mmu failed : {}", err),
+        _ => {}
+    }
 
     // TODO : receive kernel thru other methods
     let bytes = include_bytes!("../../kernel-high.img");
     core::ptr::copy(bytes as *const u8, memory::map::physical::KERN_START as *mut u8, bytes.len());
 
     debugln!("jump to upper level");
-    SP.set(memory::map::virt::KERN_STACK_START as u64);
     let upper_main: extern "C" fn() -> ! = core::mem::transmute(memory::map::virt::KERN_START);
+    SP.set(memory::map::virt::KERN_STACK_START as u64);
+    upper_main();
+}
 
-    upper_main()
+fn setup_mmu() -> Result<(), &'static str>{
+    shared::memory::mmu::setup_user_tables(&KERNEL_VIRTUAL_LAYOUT)?;
+    shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT)?;
+    shared::memory::mmu::init()
 }
 
 #[inline]
@@ -101,7 +110,7 @@ fn setup_el1_and_jump_high() -> ! {
 #[no_mangle]
 pub unsafe extern "C" fn _boot_cores() -> ! {
 
-    const EL2: u32 = CurrentEL::EL::EL2.value;
+    const EL2: u64 = CurrentEL::EL::EL2.value;
     const CORE_0: u64 = 0;
     const CORE_MASK: u64 = 0x3;
 

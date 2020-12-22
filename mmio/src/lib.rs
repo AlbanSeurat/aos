@@ -13,6 +13,7 @@ pub mod timer;
 pub mod syscall;
 pub mod logger;
 pub mod macros;
+mod bcm;
 
 pub static mut LOGGER: Logger = Logger::new();
 
@@ -21,5 +22,7 @@ pub use mbox::Mbox;
 pub use uart::Uart;
 pub use syscall::SysCall;
 pub use dwhci::DWHCI;
-pub use timer::Timer;
+pub use timer::VirtualTimer;
+pub use timer::LocalTimer;
 pub use irq::IRQ;
+pub use bcm::BCMDeviceMemory;

@@ -2,17 +2,19 @@ mod interruptions;
 mod syscalls;
 
 pub use interruptions::{disable_irq, enable_irq};
-
 use shared::exceptions::set_vbar_el1_checked;
 use shared::exceptions::handlers::ExceptionContext;
-use register::cpu::RegisterReadWrite;
-use register::cpu::RegisterReadOnly;
-use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1};
-use cortex_a::{barrier, asm};
+use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1, RegisterReadOnly, RegisterReadWrite};
+use qemu_exit::QEMUExit;
+use cortex_a::{barrier};
+use mmio::{LocalTimer, BCMDeviceMemory};
+use crate::memory;
 
 extern "C" {
     static __exception_vectors_start: u64;
 }
+
+pub const BCMDEVICES: BCMDeviceMemory = BCMDeviceMemory::new(memory::map::virt::peripheral::START);
 
 pub unsafe fn init() {
     let exception_vectors_start: u64 = &__exception_vectors_start as *const _ as u64;
@@ -30,9 +32,9 @@ unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
-    disable_irq();
+
     debugln!("Current IRQ handling");
-    enable_irq();
+    debug_halt(e);
 }
 
 #[no_mangle]
@@ -52,6 +54,18 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
 }
 
 #[no_mangle]
+unsafe extern "C" fn lower_aarch64_irq(_e: &ExceptionContext) {
+
+    let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
+    debugln!("Lower aarch64 IRQ handling : source {:x}", source);
+    match source {
+        0x800 => LocalTimer::reset(&BCMDEVICES),
+        _ => {}
+    }
+}
+
+
+#[no_mangle]
 unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
     debugln!("Synchronous exception current EL");
     debug_halt(e);
@@ -64,7 +78,6 @@ fn debug_halt(e: &ExceptionContext) {
     debugln!("ELR : {:#x?}", e.elr_el1);
     debugln!("PSTATE: {:#x?}", SPSR_EL1.get());
 
-    loop {
-        cortex_a::asm::wfe()
-    }
+    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
+    QEMU_EXIT_HANDLE.exit_failure();
 }

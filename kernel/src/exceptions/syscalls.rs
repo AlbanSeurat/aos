@@ -1,9 +1,8 @@
 use core::slice;
 use core::str::from_utf8_unchecked;
 use core::time::Duration;
-use mmio::timer::Timer;
+use mmio::timer::VirtualTimer;
 use qemu_exit::QEMUExit;
-use crate::memory;
 
 
 pub(crate) unsafe fn syscall_one(c_string: *const u8, len: usize) {
@@ -13,7 +12,7 @@ pub(crate) unsafe fn syscall_one(c_string: *const u8, len: usize) {
 
 pub(crate) unsafe fn syscall_two(secs: u64) {
     let duration = Duration::from_secs(secs);
-    Timer::sleep(duration);
+    VirtualTimer::sleep(duration);
 }
 
 pub(crate) unsafe fn syscall_three() {

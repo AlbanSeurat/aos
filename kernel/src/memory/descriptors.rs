@@ -1,24 +1,11 @@
 use core::ops::RangeInclusive;
-use shared::memory::mapping::{Translation, Mapping, MemAttributes, Granule,
+use shared::memory::mapping::{Translation, Mapping, MemAttributes,
                               AccessPermissions, Descriptor, AttributeFields};
 
 /// A virtual memory layout that is agnostic of the paging granularity that the
 /// hardware MMU will use.
 ///
 pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
-    //User MMU
-    Descriptor {
-        virtual_range: || RangeInclusive::new(super::map::physical::USER_MMU_START, super::map::physical::USER_MMU_END - 1),
-        map : Mapping {
-            translation: Translation::Identity,
-            attribute_fields: AttributeFields {
-                mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWriteKernel,
-                execute_never: true,
-            },
-        },
-        granule : Granule::BigPage
-    },
     //Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_STACK_START - 1),
@@ -30,7 +17,6 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
                 execute_never: false,
             },
         },
-        granule : Granule::Regular
     },
     //Stack Kernel
     Descriptor {
@@ -43,7 +29,6 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
                 execute_never: true,
             },
         },
-        granule : Granule::Regular
     },
     // GPU Ram
     Descriptor {
@@ -56,7 +41,6 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
                 execute_never: true,
             }
         },
-        granule : Granule::BigPage
     },
     // Device MMIO
     Descriptor {
@@ -69,7 +53,17 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
                 execute_never: true,
             },
         },
-        granule : Granule::BigPage
+    },
+    Descriptor {
+        virtual_range: || RangeInclusive::new(super::map::peripheral::START, super::map::peripheral::END),
+        map: Mapping {
+            translation: Translation::Identity,
+            attribute_fields: AttributeFields {
+                mem_attributes: MemAttributes::Device,
+                acc_perms: AccessPermissions::ReadWriteKernel,
+                execute_never: true,
+            }
+        },
     }
 ];
 
@@ -84,6 +78,5 @@ pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 1] = [
                 execute_never: false,
             },
         },
-        granule : Granule::Regular
     }
 ];

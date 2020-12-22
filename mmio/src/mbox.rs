@@ -60,6 +60,7 @@ pub mod channel {
 }
 
 // Tags
+#[allow(dead_code)]
 pub mod tag {
     pub const GETSERIAL: u32 = 0x10004;
     pub const SETCLKRATE: u32 = 0x38002;

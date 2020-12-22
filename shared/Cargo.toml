@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 mmio = { path = "../mmio" }
-cortex-a = "3.0.4"
+cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "master" }
 register = "0.5.1"
+itertools = { version = "0.9.0" , default-features = false }

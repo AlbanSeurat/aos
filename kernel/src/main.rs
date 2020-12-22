@@ -7,11 +7,11 @@
 #![feature(llvm_asm)]
 
 #[macro_use] extern crate mmio;
-use cortex_a::asm;
-use cortex_a::regs::*;
 use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
-use core::time::Duration;
-use mmio::{Timer, IRQ};
+use qemu_exit::QEMUExit;
+use cortex_a::regs::{SP_EL0, ELR_EL1, RegisterReadWrite};
+use cortex_a::asm;
+use crate::exceptions::BCMDEVICES;
 
 mod memory;
 mod exceptions;
@@ -26,8 +26,8 @@ extern "C" {
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
     debugln!("{:?}", info);
-    asm::wfe();
-    loop {}
+    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
+    QEMU_EXIT_HANDLE.exit_failure()
 }
 
 /// Entrypoint of the kernel.
@@ -37,10 +37,11 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
-    let gpio = mmio::GPIO::new(memory::map::virt::GPIO_BASE);
-    let mut v_mbox = mmio::Mbox::new(memory::map::virt::MBOX_BASE);
+    let _gpio = mmio::GPIO::new(memory::map::virt::GPIO_BASE);
+    let _v_mbox = mmio::Mbox::new(memory::map::virt::MBOX_BASE);
     let uart = mmio::Uart::new(memory::map::virt::UART_BASE);
-    let dwhci = mmio::DWHCI::new(memory::map::virt::USB_BASE);
+    let _dwhci = mmio::DWHCI::new(memory::map::virt::USB_BASE);
+    let irq = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
 
     mmio::LOGGER.appender(uart.into());
     debugln!("UART live in upper level");
@@ -48,9 +49,12 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     exceptions::init();
     debugln!("Exception Handling initialized");
 
-    shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT, memory::map::physical::KERN_MMU_START);
-    shared::memory::mmu::setup_user_tables(&PROGRAM_VIRTUAL_LAYOUT, memory::map::physical::USER_MMU_START);
-    debugln!("MMU re-configured");
+    match setup_mmu() {
+        Err(err) => panic!("setup mmu failed : {}", err),
+        _ => {}
+    }
+
+    mmio::timer::LocalTimer::setup(&BCMDEVICES);
 
     let bytes = include_bytes!("../../program.img");
     debugln!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
@@ -61,6 +65,13 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     SP_EL0.set(0x00400000);
     ELR_EL1.set(memory::map::physical::PROG_START as u64);
     asm::eret();
+}
 
-    loop {}
+fn setup_mmu() -> Result<(), &'static str> {
+    shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT)?;
+    shared::memory::mmu::setup_user_tables(&PROGRAM_VIRTUAL_LAYOUT)?;
+    unsafe { debug!("MMU Kernel mapping : \n{}", shared::memory::mmu::kernel_tables()); }
+    unsafe { debug!("MMU Program mapping : \n{}", shared::memory::mmu::user_tables()); }
+    debugln!("MMU re-configured");
+    Ok(())
 }

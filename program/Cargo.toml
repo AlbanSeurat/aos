@@ -9,6 +9,5 @@ edition = "2018"
 [dependencies]
 mmio = { path = "../mmio" }
 shared = { path = "../shared" }
-cortex-a = "3.0.4"
-register = "0.5.1"
+cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "master" }
 r0 = "1.0.0"
