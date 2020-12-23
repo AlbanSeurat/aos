@@ -2,7 +2,7 @@ ENTRY(_boot_cores);
 
 SECTIONS
 {
-    . = 0xFFFFFFFFFae00000;
+    . = 0xFFFFFFFFB9000000;
     __ro_start = .;
     .text :
     {

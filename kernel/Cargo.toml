@@ -10,6 +10,5 @@ edition = "2018"
 mmio = { path = "../mmio" }
 shared = { path = "../shared" }
 qemu-exit = "1.0.0"
-cortex-a = "3.0.4"
-register = "0.5.1"
+cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "master" }
 r0 = "1.0.0"

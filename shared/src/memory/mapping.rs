@@ -43,15 +43,10 @@ pub struct Mapping {
     pub attribute_fields: AttributeFields,
 }
 
-#[derive(Copy, Clone, Debug)]
-pub enum Granule {
-    Regular, // 4k
-    BigPage, // 2M
-}
-
 #[derive(Debug)]
 pub struct Descriptor {
     pub virtual_range: fn() -> RangeInclusive<usize>,
     pub map : Mapping,
-    pub granule : Granule
 }
+
+

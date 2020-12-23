@@ -1,24 +1,29 @@
 use cortex_a::{barrier, regs::*};
-use crate::memory::mapping::{AttributeFields, Descriptor};
+use crate::memory::mapping::{Descriptor};
 use crate::memory::mair;
-use crate::memory::PageTable;
-use crate::memory::pages;
-use crate::memory::pages::{BaseAddr, TranslationTable};
+use crate::memory::translate::{Granule512MiB, TranslationGranule};
+use crate::memory::pages::FixedSizeTranslationTable;
 
-pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), &'static str> {
+/// This constant is the power-of-two exponent that defines the virtual address space size.
+///
+/// Values tested and known to be working:
+///   - 30 (1 GiB)
+///   - 31 (2 GiB)
+///   - 32 (4 GiB)
+///   - 33 (8 GiB)
+const ADDR_SPACE_SIZE_EXPONENT: usize = 31;
+const NUM_LVL2_TABLES: usize = (1 << ADDR_SPACE_SIZE_EXPONENT) >> Granule512MiB::SHIFT;
+const T0SZ: u64 = (64 - ADDR_SPACE_SIZE_EXPONENT) as u64;
+
+static mut KERNEL_TABLES: ArchTranslationTable = ArchTranslationTable::new();
+static mut USER_TABLES: ArchTranslationTable = ArchTranslationTable::new();
+
+pub type ArchTranslationTable = FixedSizeTranslationTable<NUM_LVL2_TABLES>;
+pub const VIRTUAL_ADDR_START : usize = usize::MAX << ADDR_SPACE_SIZE_EXPONENT;
+
+pub fn init() -> Result<(), &'static str> {
     // Prepare the memory attribute indirection register.
     mair::init();
-
-    let base_addr = match new_tables(descriptors, tables_base_addr) {
-        Ok(addr) => addr,
-        Err(s) => return Err(s)
-    };
-    unsafe {
-        // Point to the LVL2 table base address in TTBR0.
-        TTBR0_EL1.set_baddr(base_addr);
-        // Point to the LVL2 table base address in TTBR1.
-        TTBR1_EL1.set_baddr(base_addr);
-    }
 
     // Configure various settings of stage 1 of the EL1 translation regime.
     let ips = ID_AA64MMFR0_EL1.read(ID_AA64MMFR0_EL1::PARange);
@@ -26,8 +31,8 @@ pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), 
         TCR_EL1::TBI0::Ignored
             + TCR_EL1::TBI1::Ignored
             + TCR_EL1::IPS.val(ips)
-            + TCR_EL1::TG0::KiB_4 // 4 KiB granule
-            + TCR_EL1::TG1::KiB_4
+            + TCR_EL1::TG0::KiB_64 // 64 KiB granule
+            + TCR_EL1::TG1::KiB_64 // 64 KiB granule
             + TCR_EL1::SH0::Inner
             + TCR_EL1::SH1::Inner
             + TCR_EL1::ORGN0::WriteBack_ReadAlloc_WriteAlloc_Cacheable
@@ -36,8 +41,8 @@ pub fn init(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(), 
             + TCR_EL1::IRGN1::WriteBack_ReadAlloc_WriteAlloc_Cacheable
             + TCR_EL1::EPD0::EnableTTBR0Walks
             + TCR_EL1::EPD1::EnableTTBR1Walks
-            + TCR_EL1::T0SZ.val(34)  // Start walks at level 2
-            + TCR_EL1::T1SZ.val(34), // Start walks at level 2
+            + TCR_EL1::T0SZ.val(T0SZ)  // Start walks at level 2
+            + TCR_EL1::T1SZ.val(T0SZ), // Start walks at level 2
     );
 
     // Switch the MMU on.
@@ -61,46 +66,34 @@ pub fn reset_user_tables () {
     TTBR0_EL1.set_baddr(0);
 }
 
-pub fn setup_kernel_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(()), &'static str> {
-    let base_addr = match new_tables(descriptors, tables_base_addr) {
-        Ok(addr) => addr,
-        Err(s) => return Err(s)
-    };
+pub fn setup_kernel_tables(descriptors: &[Descriptor]) -> Result<(), &'static str> {
     unsafe {
-        TTBR1_EL1.set_baddr(base_addr);
-        TTBR0_EL1.set_baddr(base_addr);
-        // Force MMU init to complete before next instruction
+        KERNEL_TABLES.map_descriptors(descriptors)?;
+        let base_addr = KERNEL_TABLES.phys_base_addr();
+
+        // Point to the LVL2 table base address in TTBR1.
+        TTBR1_EL1.set_baddr(base_addr as u64);
         barrier::isb(barrier::SY);
-        Ok(())
     }
+    Ok(())
 }
 
-pub fn setup_user_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(()), &'static str> {
-    let base_addr = match new_tables(descriptors, tables_base_addr) {
-        Ok(addr) => addr,
-        Err(s) => return Err(s)
-    };
+pub fn setup_user_tables(descriptors: &[Descriptor]) -> Result<(), &'static str> {
     unsafe {
-        TTBR0_EL1.set_baddr(base_addr);
-        // Force MMU init to complete before next instruction
+        USER_TABLES.map_descriptors(descriptors)?;
+        let base_addr = USER_TABLES.phys_base_addr();
+
+        // Point to the LVL2 table base address in TTBR0.
+        TTBR0_EL1.set_baddr(base_addr as u64);
         barrier::isb(barrier::SY);
-        Ok(())
     }
+    Ok(())
 }
 
-fn new_tables(descriptors: &[Descriptor], tables_base_addr : usize) -> Result<(u64), &'static str> {
+pub unsafe fn kernel_tables() -> &'static ArchTranslationTable {
+    &KERNEL_TABLES
+}
 
-    let mut tb = TranslationTable::new(tables_base_addr);
-    let level2 = match tb.alloc_table() {
-        Ok(table) => table,
-        Err(s) => return Err(s)
-    };
-    debugln!("table {:p}", level2);
-    unsafe {
-        match pages::init(&mut tb, &mut *level2, descriptors) {
-            Ok(_) => (),
-            Err(s) => return Err(s)
-        };
-        Ok((*level2).entries.base_addr_u64())
-    }
+pub unsafe fn user_tables() -> &'static ArchTranslationTable {
+    &USER_TABLES
 }

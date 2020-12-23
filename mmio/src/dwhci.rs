@@ -1,4 +1,4 @@
-use register::{mmio::ReadWrite, register_bitfields};
+use register::{mmio::ReadWrite};
 use core::ops;
 use register::mmio::ReadOnly;
 

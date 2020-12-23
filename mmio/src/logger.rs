@@ -8,7 +8,7 @@ pub struct Logger {
 }
 
 pub trait Appender {
-    fn puts(&self, string: &str) {}
+    fn puts(&self, _string: &str) {}
 }
 
 pub struct NullLogger;

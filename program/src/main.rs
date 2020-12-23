@@ -8,13 +8,13 @@
 #[macro_use] extern crate mmio;
 use cortex_a::asm;
 use mmio::syscall::SysCall;
-use core::time::Duration;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
     static mut __bss_start: u64;
     static mut __bss_end: u64;
 }
+
 
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
@@ -35,11 +35,10 @@ pub unsafe extern "C" fn _main() -> () {
     debugln!("show a message using SCV call");
 
     let syscall = SysCall { };
-    syscall.sleep(3);
+    syscall.sleep(1);
 
-    debugln!("show a second message after three second");
+    debugln!("show a second message after one second");
 
-    syscall.halt();
     loop {
         asm::wfe();
     }

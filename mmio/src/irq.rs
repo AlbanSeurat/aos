@@ -38,4 +38,12 @@ impl IRQ {
     fn ptr(&self) -> *const RegisterBlock {
         self.base_addr as *const _
     }
+
+    pub fn local_enable(&self, irq: u32) {
+        self.ENABLE_IRQS_1.set(irq);
+    }
+
+    pub fn external_enable(&self, irq: u32) {
+        self.ENABLE_IRQS_2.set(irq);
+    }
 }
