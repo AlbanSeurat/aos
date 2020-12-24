@@ -28,9 +28,16 @@ version = "0.1.0"
 dependencies = [
  "cortex-a",
  "mmio",
+ "qemu-exit",
  "r0",
  "shared",
 ]
+
+[[package]]
+name = "console-traits"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f711b3d1d5c3f7ae7d6428901c0f3e5d5f5c800fcfac86bf0252e96373a2cec6"
 
 [[package]]
 name = "cortex-a"
@@ -47,6 +54,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e78d4f1cc4ae33bbfc157ed5d5a5ef3bc29227303d595861deb238fcec4e9457"
 
 [[package]]
+name = "font8x8"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e63201c624b8c8883921b1a1accc8916c4fa9dbfb15d122b26e4dde945b86bbf"
+
+[[package]]
 name = "itertools"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -59,7 +72,9 @@ dependencies = [
 name = "mmio"
 version = "0.1.0"
 dependencies = [
+ "console-traits",
  "cortex-a",
+ "font8x8",
  "register 0.5.1",
 ]
 

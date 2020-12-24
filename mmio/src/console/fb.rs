@@ -1,9 +1,8 @@
-use crate::kernel::devices::hw::mbox;
-use crate::kernel::memory;
 use core::sync::atomic::{compiler_fence, Ordering};
 use core::ptr;
+use crate::mbox;
+use crate::{debugln, debug};
 
-#[derive(Debug)]
 pub struct FrameBuffer {
     width : u32,
     height: u32,
@@ -13,7 +12,7 @@ pub struct FrameBuffer {
 const BPP : u32 = 32;
 
 impl FrameBuffer {
-    pub fn new(v_mbox: &mut mbox::Mbox) -> FrameBuffer {
+    pub fn new(v_mbox: &mut mbox::Mbox, baseaddr: usize) -> FrameBuffer {
 
         const REQUEST_SIZE : u32 = 35 * 4;
 
@@ -29,8 +28,8 @@ impl FrameBuffer {
         v_mbox.buffer[7] = mbox::tag::SET_SCREEN_VIRT_RES;
         v_mbox.buffer[8] = 8;
         v_mbox.buffer[9] = 8;
-        v_mbox.buffer[10] = 1024;         //FrameBufferInfo.virtual_width
-        v_mbox.buffer[11] = 768;          //FrameBufferInfo.virtual_height
+        v_mbox.buffer[10] = 2048;         //FrameBufferInfo.virtual_width
+        v_mbox.buffer[11] = 1536;         //FrameBufferInfo.virtual_height
 
         v_mbox.buffer[12] = mbox::tag::SET_SCREEN_VIRT_OFF;
         v_mbox.buffer[13] = 8;
@@ -64,16 +63,35 @@ impl FrameBuffer {
         compiler_fence(Ordering::Release);
 
         if v_mbox.call(mbox::channel::PROP).is_ok() && v_mbox.buffer[20] == 32 && v_mbox.buffer[28] != 0 {
+            debugln!("framebuffer base pointer {:x}", v_mbox.buffer[28] as usize);
             return FrameBuffer {
                 width: v_mbox.buffer[5],
                 height: v_mbox.buffer[6],
                 pitch: v_mbox.buffer[33],
-                base_pointer: memory::map::virt::START + v_mbox.buffer[28] as usize,
+                base_pointer: baseaddr + v_mbox.buffer[28] as usize,
             }
         } else {
             panic!("Error setting up screen");
         };
 
+    }
+
+    pub fn scroll(&self, v_mbox: &mut mbox::Mbox, size : u32) {
+        v_mbox.buffer[0] = 8 * 4;
+        v_mbox.buffer[1] = mbox::REQUEST;
+
+        v_mbox.buffer[2] = mbox::tag::SET_SCREEN_VIRT_OFF;
+        v_mbox.buffer[3] = 8;
+        v_mbox.buffer[4] = 8;
+        v_mbox.buffer[5] = 0;           //FrameBufferInfo.x_offset
+        v_mbox.buffer[6] = size * 8;           //FrameBufferInfo.y.offset
+        v_mbox.buffer[7] = mbox::tag::LAST;
+
+        if v_mbox.call(mbox::channel::PROP).is_ok() {
+            //debugln!("framebuffer base pointer {:x}", v_mbox.buffer[6] as usize);
+        } else {
+            panic!("Error setting up screen");
+        };
     }
 
     pub fn print_pixel(&self, x : u32, y: u32, pixel: u32) {
@@ -83,3 +101,4 @@ impl FrameBuffer {
         }
     }
 }
+

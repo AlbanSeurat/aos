@@ -8,6 +8,7 @@
 #[macro_use] extern crate mmio;
 use cortex_a::asm;
 use mmio::syscall::SysCall;
+use qemu_exit::QEMUExit;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -19,8 +20,8 @@ extern "C" {
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
     debugln!("{:?}", info);
-    asm::wfe();
-    loop {}
+    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
+    QEMU_EXIT_HANDLE.exit_failure()
 }
 
 

@@ -12,6 +12,7 @@ use qemu_exit::QEMUExit;
 use cortex_a::regs::{SP_EL0, ELR_EL1, RegisterReadWrite};
 use cortex_a::asm;
 use crate::exceptions::BCMDEVICES;
+use shared::memory::mmu::VIRTUAL_ADDR_START;
 
 mod memory;
 mod exceptions;
@@ -38,13 +39,13 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
     let _gpio = mmio::GPIO::new(memory::map::virt::GPIO_BASE);
-    let _v_mbox = mmio::Mbox::new(memory::map::virt::MBOX_BASE);
+    let v_mbox = mmio::Mbox::new(memory::map::virt::MBOX_BASE);
     let uart = mmio::Uart::new(memory::map::virt::UART_BASE);
     let _dwhci = mmio::DWHCI::new(memory::map::virt::USB_BASE);
-    let irq = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
-
-    mmio::LOGGER.appender(uart.into());
-    debugln!("UART live in upper level");
+    let _irq = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
+    let mut console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
+    mmio::LOGGER.appender(console.into());
+    debugln!("MMIO live in upper level");
 
     exceptions::init();
     debugln!("Exception Handling initialized");

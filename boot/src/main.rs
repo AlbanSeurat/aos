@@ -8,6 +8,7 @@
 
 use cortex_a::asm;
 use cortex_a::regs::*;
+use qemu_exit::QEMUExit;
 use memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
 
 mod exceptions;
@@ -16,8 +17,8 @@ mod memory;
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
     debugln!("{:?}", info);
-    asm::wfe();
-    loop {}
+    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
+    QEMU_EXIT_HANDLE.exit_failure()
 }
 
 extern "C" {
@@ -46,15 +47,12 @@ unsafe fn reset() -> ! {
     }
     exceptions::init();
     match setup_mmu() {
-
         Err(err) => panic!("setup mmu failed : {}", err),
         _ => {}
     }
-
     // TODO : receive kernel thru other methods
     let bytes = include_bytes!("../../kernel-high.img");
     core::ptr::copy(bytes as *const u8, memory::map::physical::KERN_START as *mut u8, bytes.len());
-
     debugln!("jump to upper level");
     let upper_main: extern "C" fn() -> ! = core::mem::transmute(memory::map::virt::KERN_START);
     SP.set(memory::map::virt::KERN_STACK_START as u64);

@@ -233,7 +233,7 @@ impl Appender for Uart {
 
 
     /// Display a string
-    fn puts(&self, string: &str) {
+    fn puts(&mut self, string: &str) {
         for c in string.chars() {
             // convert newline to carrige return + newline
             if c == '\n' {

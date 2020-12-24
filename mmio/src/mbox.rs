@@ -67,6 +67,7 @@ pub mod tag {
 
     pub const GET_SCREEN_FRAME_BUFFER : u32 = 0x40001;
     pub const GET_PITCH : u32 = 0x40008;
+    pub const GET_SCREEN_VIRTUAL_OFFSET: u32 = 0x40009;
 
     pub const SET_SCREEN_PHY_RES: u32 = 0x48003;
     pub const SET_SCREEN_VIRT_RES: u32 = 0x48004;

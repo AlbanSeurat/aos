@@ -1,23 +1,29 @@
 use core::fmt;
-use core::ops::Deref;
+use core::ops::{Deref, DerefMut};
 use crate::uart::Uart;
 use crate::syscall::SysCall;
+use crate::FrameBufferConsole;
+use core::borrow::BorrowMut;
 
 pub struct Logger {
     output: Output,
 }
 
 pub trait Appender {
-    fn puts(&self, _string: &str) {}
+    fn puts(&mut self, _string: &str);
 }
 
 pub struct NullLogger;
-impl Appender for NullLogger {}
+
+impl Appender for NullLogger {
+    fn puts(&mut self, _string: &str) {}
+}
 
 /// Possible outputs which the console can store.
 pub enum Output {
     None(NullLogger),
     Uart(Uart),
+    ScreenConsole(FrameBufferConsole),
     Syscall(SysCall),
 }
 
@@ -45,6 +51,12 @@ impl From<SysCall> for Output {
     }
 }
 
+impl From<FrameBufferConsole> for Output {
+    fn from(instance: FrameBufferConsole) -> Self {
+        Output::ScreenConsole(instance)
+    }
+}
+
 
 impl Deref for Logger {
     type Target = dyn Appender;
@@ -53,7 +65,19 @@ impl Deref for Logger {
         match &self.output {
             Output::None(i) => i,
             Output::Uart(i) => i,
-            Output::Syscall(i ) => i,
+            Output::ScreenConsole(i) => i,
+            Output::Syscall(i) => i,
+        }
+    }
+}
+
+impl DerefMut for Logger {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        match &mut self.output {
+            Output::None(i) => i,
+            Output::Uart(i) => i,
+            Output::ScreenConsole(i) => i,
+            Output::Syscall(i) => i,
         }
     }
 }

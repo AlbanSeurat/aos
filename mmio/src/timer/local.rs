@@ -1,9 +1,6 @@
-use crate::{debugln, debug};
-use register::mmio::ReadOnly;
 use crate::bcm::{DeviceMemoryBlock, LOCAL_TIMER_CONTROL_STATUS, LOCAL_TIMER_IRQ_CLEAN_RELOAD};
 
 const RESET_VALUE: u32 = 38_461_538;
-
 
 pub struct LocalTimer {}
 

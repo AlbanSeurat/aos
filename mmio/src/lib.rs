@@ -14,6 +14,7 @@ pub mod syscall;
 pub mod logger;
 pub mod macros;
 mod bcm;
+mod console;
 
 pub static mut LOGGER: Logger = Logger::new();
 
@@ -26,3 +27,4 @@ pub use timer::VirtualTimer;
 pub use timer::LocalTimer;
 pub use irq::IRQ;
 pub use bcm::BCMDeviceMemory;
+pub use console::FrameBufferConsole;
