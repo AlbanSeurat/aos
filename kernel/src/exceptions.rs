@@ -26,14 +26,14 @@ pub unsafe fn init() {
 /// is overwritten.
 #[no_mangle]
 unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
-    debugln!("Unknown Exception Context");
+    println!("Unknown Exception Context");
     debug_halt(e);
 }
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
 
-    debugln!("Current IRQ handling");
+    println!("Current IRQ handling");
     debug_halt(e);
 }
 
@@ -48,16 +48,19 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
             _ => ()
         }
     } else {
-        debugln!("Synchronous exception lower EL");
+        println!("Synchronous exception lower EL");
         debug_halt(e);
     }
 }
+
+static mut INC: u32 = 0;
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_irq(_e: &ExceptionContext) {
 
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
-    debugln!("Lower aarch64 IRQ handling : source {:x}", source);
+    println!("Lower aarch64 IRQ handling : source {:x} - {}", source, INC);
+    INC = INC + 1;
     match source {
         0x800 => LocalTimer::reset(&BCMDEVICES),
         _ => {}
@@ -67,16 +70,16 @@ unsafe extern "C" fn lower_aarch64_irq(_e: &ExceptionContext) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
-    debugln!("Synchronous exception current EL");
+    println!("Synchronous exception current EL");
     debug_halt(e);
 }
 
 fn debug_halt(e: &ExceptionContext) {
-    debugln!("GPR : {:x?}", e.gpr);
-    debugln!("ESR : {:#x?}/{:#x?}", ESR_EL1.read(ESR_EL1::EC), ESR_EL1.get());
-    debugln!("FAR : {:#x?}", FAR_EL1.get());
-    debugln!("ELR : {:#x?}", e.elr_el1);
-    debugln!("PSTATE: {:#x?}", SPSR_EL1.get());
+    println!("GPR : {:x?}", e.gpr);
+    println!("ESR : {:#x?}/{:#x?}", ESR_EL1.read(ESR_EL1::EC), ESR_EL1.get());
+    println!("FAR : {:#x?}", FAR_EL1.get());
+    println!("ELR : {:#x?}", e.elr_el1);
+    println!("PSTATE: {:#x?}", SPSR_EL1.get());
 
     const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
     QEMU_EXIT_HANDLE.exit_failure();

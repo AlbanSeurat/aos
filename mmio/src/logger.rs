@@ -57,7 +57,6 @@ impl From<FrameBufferConsole> for Output {
     }
 }
 
-
 impl Deref for Logger {
     type Target = dyn Appender;
 

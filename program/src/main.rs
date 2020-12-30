@@ -19,7 +19,7 @@ extern "C" {
 
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
-    debugln!("{:?}", info);
+    println!("{:?}", info);
     const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
     QEMU_EXIT_HANDLE.exit_failure()
 }
@@ -31,14 +31,14 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
 pub unsafe extern "C" fn _main() -> () {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
-    mmio::LOGGER.appender(SysCall { }.into());
+    mmio::SCREEN.appender(SysCall { }.into());
 
-    debugln!("show a message using SCV call");
+    println!("show a message using SCV call");
 
     let syscall = SysCall { };
     syscall.sleep(1);
 
-    debugln!("show a second message after one second");
+    println!("show a second message after one second");
 
     loop {
         asm::wfe();

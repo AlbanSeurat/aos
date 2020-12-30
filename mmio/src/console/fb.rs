@@ -4,17 +4,17 @@ use crate::mbox;
 use crate::{debugln, debug};
 
 pub struct FrameBuffer {
-    width : u32,
-    height: u32,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
     pitch: u32,
     base_pointer: usize,
 }
-const BPP : u32 = 32;
+
+const BPP: u32 = 32;
 
 impl FrameBuffer {
     pub fn new(v_mbox: &mut mbox::Mbox, baseaddr: usize) -> FrameBuffer {
-
-        const REQUEST_SIZE : u32 = 35 * 4;
+        const REQUEST_SIZE: u32 = 35 * 4;
 
         v_mbox.buffer[0] = REQUEST_SIZE;
         v_mbox.buffer[1] = mbox::REQUEST;
@@ -28,7 +28,7 @@ impl FrameBuffer {
         v_mbox.buffer[7] = mbox::tag::SET_SCREEN_VIRT_RES;
         v_mbox.buffer[8] = 8;
         v_mbox.buffer[9] = 8;
-        v_mbox.buffer[10] = 2048;         //FrameBufferInfo.virtual_width
+        v_mbox.buffer[10] = 1025;         //FrameBufferInfo.virtual_width
         v_mbox.buffer[11] = 1536;         //FrameBufferInfo.virtual_height
 
         v_mbox.buffer[12] = mbox::tag::SET_SCREEN_VIRT_OFF;
@@ -69,35 +69,38 @@ impl FrameBuffer {
                 height: v_mbox.buffer[6],
                 pitch: v_mbox.buffer[33],
                 base_pointer: baseaddr + v_mbox.buffer[28] as usize,
-            }
+            };
         } else {
             panic!("Error setting up screen");
         };
-
     }
 
-    pub fn scroll(&self, v_mbox: &mut mbox::Mbox, size : u32) {
+    pub fn scroll_down(&self, v_mbox: &mut mbox::Mbox, size: u32) {
         v_mbox.buffer[0] = 8 * 4;
         v_mbox.buffer[1] = mbox::REQUEST;
 
         v_mbox.buffer[2] = mbox::tag::SET_SCREEN_VIRT_OFF;
         v_mbox.buffer[3] = 8;
         v_mbox.buffer[4] = 8;
-        v_mbox.buffer[5] = 0;           //FrameBufferInfo.x_offset
+        v_mbox.buffer[5] = 0;                  //FrameBufferInfo.x_offset
         v_mbox.buffer[6] = size * 8;           //FrameBufferInfo.y.offset
         v_mbox.buffer[7] = mbox::tag::LAST;
 
-        if v_mbox.call(mbox::channel::PROP).is_ok() {
-            //debugln!("framebuffer base pointer {:x}", v_mbox.buffer[6] as usize);
-        } else {
+        if v_mbox.call(mbox::channel::PROP).is_err() {
             panic!("Error setting up screen");
-        };
+        }
     }
 
-    pub fn print_pixel(&self, x : u32, y: u32, pixel: u32) {
-        let pixel_offset : u32 = ( x * ( BPP >> 3 ) ) + ( y * self.pitch );
+    pub fn print_pixel(&self, x: u32, y: u32, pixel: u32) {
+        let pixel_offset: u32 = (x * (BPP >> 3)) + (y * self.pitch);
         unsafe {
             ptr::write((self.base_pointer + pixel_offset as usize) as *mut u32, pixel);
+        }
+    }
+
+    pub fn flip(&self) {
+        unsafe {
+            ptr::copy((self.base_pointer + 1025usize * 768usize * 4usize) as *const u8, self.base_pointer as *mut u8, 1025 * 768 * 4);
         }
     }
 }

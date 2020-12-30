@@ -26,7 +26,7 @@ extern "C" {
 
 #[panic_handler]
 fn my_panic(info: &core::panic::PanicInfo) -> ! {
-    debugln!("{:?}", info);
+    println!("{:?}", info);
     const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
     QEMU_EXIT_HANDLE.exit_failure()
 }
@@ -44,11 +44,12 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     let _dwhci = mmio::DWHCI::new(memory::map::virt::USB_BASE);
     let _irq = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
     let mut console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
-    mmio::LOGGER.appender(console.into());
-    debugln!("MMIO live in upper level");
+    mmio::LOGGER.appender(uart.into());
+    mmio::SCREEN.appender( console.into());
+    println!("MMIO live in upper level");
 
     exceptions::init();
-    debugln!("Exception Handling initialized");
+    println!("Exception Handling initialized");
 
     match setup_mmu() {
         Err(err) => panic!("setup mmu failed : {}", err),
@@ -58,10 +59,10 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     mmio::timer::LocalTimer::setup(&BCMDEVICES);
 
     let bytes = include_bytes!("../../program.img");
-    debugln!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
+    println!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
     core::ptr::copy(bytes as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
-    
-    debugln!("JUMP to program");
+
+    println!("JUMP to program");
 
     SP_EL0.set(0x00400000);
     ELR_EL1.set(memory::map::physical::PROG_START as u64);
@@ -71,8 +72,8 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 fn setup_mmu() -> Result<(), &'static str> {
     shared::memory::mmu::setup_kernel_tables(&KERNEL_VIRTUAL_LAYOUT)?;
     shared::memory::mmu::setup_user_tables(&PROGRAM_VIRTUAL_LAYOUT)?;
-    unsafe { debug!("MMU Kernel mapping : \n{}", shared::memory::mmu::kernel_tables()); }
-    unsafe { debug!("MMU Program mapping : \n{}", shared::memory::mmu::user_tables()); }
-    debugln!("MMU re-configured");
+    unsafe { print!("MMU Kernel mapping : \n{}", shared::memory::mmu::kernel_tables()); }
+    unsafe { print!("MMU Program mapping : \n{}", shared::memory::mmu::user_tables()); }
+    println!("MMU re-configured");
     Ok(())
 }

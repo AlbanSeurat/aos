@@ -1,5 +1,5 @@
 use crate::memory::mapping::{AttributeFields, Descriptor};
-use crate::memory::translate::{PageDescriptor, TableDescriptor, Granule512MiB, TranslationGranule, Granule64KiB, STAGE1_DESCRIPTOR, STAGE1_TABLE_DESCRIPTOR};
+use crate::memory::translate::{PageDescriptor, TableDescriptor, Granule512MiB, TranslationGranule, Granule64KiB};
 use core::ops::RangeInclusive;
 use crate::memory::mmu::VIRTUAL_ADDR_START;
 use core::fmt::{Display, Formatter};

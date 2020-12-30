@@ -17,6 +17,7 @@ mod bcm;
 mod console;
 
 pub static mut LOGGER: Logger = Logger::new();
+pub static mut SCREEN: Logger = Logger::new();
 
 pub use gpio::GPIO;
 pub use mbox::Mbox;

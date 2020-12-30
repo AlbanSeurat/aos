@@ -8,7 +8,7 @@ use crate::{debugln, debug};
 pub struct FrameBufferConsole {
     lfb: FrameBuffer,
     pos: Position,
-    inc: u8,
+    inc: u32,
     v_mbox: mbox::Mbox,
 }
 
@@ -33,7 +33,7 @@ impl UnicodeConsole for FrameBufferConsole {
     fn write_char_at(&mut self, ch: char, pos: Position) -> Result<(), Self::Error> {
 
         let x  = pos.col.0 as u32 * 8;
-        let y = ((pos.row.0 + self.inc ) * 8) as u32;
+        let y =  (pos.row.0 as u32 + self.inc) * 8;
 
         // [x + y * (doubleFb.pitch >> 2)]
         if let Some(glyph) = BASIC_FONTS.get(ch) {
@@ -58,11 +58,11 @@ impl BaseConsole for FrameBufferConsole {
     type Error = &'static str;
 
     fn get_width(&self) -> Col {
-        return Col(128)
+        return Col((self.lfb.width / 8) as u8);
     }
 
     fn get_height(&self) -> Row {
-        return Row(15)
+        return Row((self.lfb.height / 8) as u8);
     }
 
     fn set_col(&mut self, col: Col) -> Result<(), Self::Error> {
@@ -100,7 +100,11 @@ impl BaseConsole for FrameBufferConsole {
 
     fn scroll_screen(&mut self) -> Result<(), Self::Error> {
         self.inc = self.inc + 1;
-        Ok(self.lfb.scroll(&mut self.v_mbox, self.inc as u32))
+        if self.inc >= self.get_height().0 as u32 {
+            self.lfb.flip();
+            self.inc = 0;
+        }
+        Ok(self.lfb.scroll_down(&mut self.v_mbox, self.inc as u32))
     }
 }
 

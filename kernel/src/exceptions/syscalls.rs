@@ -7,7 +7,7 @@ use qemu_exit::QEMUExit;
 
 pub(crate) unsafe fn syscall_one(c_string: *const u8, len: usize) {
     let string = slice::from_raw_parts(c_string,len);
-    debug!("{}", from_utf8_unchecked(string));
+    print!("{}", from_utf8_unchecked(string));
 }
 
 pub(crate) unsafe fn syscall_two(secs: u64) {
