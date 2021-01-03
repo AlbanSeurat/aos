@@ -2,8 +2,7 @@ use console_traits::{UnicodeConsole, Position, BaseConsole, Col, Row, ControlCha
 use font8x8::{BASIC_FONTS, UnicodeFonts};
 use crate::console::fb::FrameBuffer;
 use crate::mbox;
-use crate::logger::Appender;
-use crate::{debugln, debug};
+use crate::io::{Writer, IoResult};
 
 pub struct FrameBufferConsole {
     lfb: FrameBuffer,
@@ -49,7 +48,7 @@ impl UnicodeConsole for FrameBufferConsole {
         Ok(())
     }
 
-    fn handle_escape(&mut self, escaped_char: char) -> bool {
+    fn handle_escape(&mut self, _escaped_char: char) -> bool {
         unimplemented!()
     }
 }
@@ -65,11 +64,11 @@ impl BaseConsole for FrameBufferConsole {
         return Row((self.lfb.height / 8) as u8);
     }
 
-    fn set_col(&mut self, col: Col) -> Result<(), Self::Error> {
+    fn set_col(&mut self, _col: Col) -> Result<(), Self::Error> {
         unimplemented!()
     }
 
-    fn set_row(&mut self, row: Row) -> Result<(), Self::Error> {
+    fn set_row(&mut self, _row: Row) -> Result<(), Self::Error> {
         unimplemented!()
     }
 
@@ -82,7 +81,7 @@ impl BaseConsole for FrameBufferConsole {
         return self.pos;
     }
 
-    fn set_control_char_mode(&mut self, mode: ControlCharMode) {
+    fn set_control_char_mode(&mut self, _mode: ControlCharMode) {
         unimplemented!()
     }
 
@@ -90,7 +89,7 @@ impl BaseConsole for FrameBufferConsole {
         return ControlCharMode::Interpret;
     }
 
-    fn set_escape_char_mode(&mut self, mode: EscapeCharMode) {
+    fn set_escape_char_mode(&mut self, _mode: EscapeCharMode) {
         unimplemented!()
     }
 
@@ -108,9 +107,10 @@ impl BaseConsole for FrameBufferConsole {
     }
 }
 
-impl Appender for FrameBufferConsole {
+impl Writer for FrameBufferConsole {
 
-    fn puts(&mut self, string: &str) {
+    fn puts(&mut self, string: &str) -> IoResult<usize> {
         self.write(string);
+        Ok(string.len())
     }
 }

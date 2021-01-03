@@ -23,14 +23,14 @@
  */
 
 use super::gpio;
-use crate::{delays, mbox};
+use crate::{delays, mbox, IRQ, BCMDeviceMemory};
 use core::{
     ops,
     sync::atomic::{compiler_fence, Ordering},
 };
 use cortex_a::asm;
 use register::{mmio::*, register_bitfields};
-use crate::logger::Appender;
+use crate::io::{Writer, Reader, IoResult};
 
 // PL011 UART registers.
 //
@@ -116,6 +116,12 @@ register_bitfields! {
     ICR [
         /// Meta field for all pending interrupts
         ALL OFFSET(0) NUMBITS(11) []
+    ],
+
+    /// Interrupt mask set/clear register
+    IMSC [
+        /// Meta field for all pending interrupts
+        ALL OFFSET(0) NUMBITS(11) []
     ]
 }
 
@@ -130,15 +136,18 @@ pub struct RegisterBlock {
     FBRD: WriteOnly<u32, FBRD::Register>, // 0x28
     LCRH: WriteOnly<u32, LCRH::Register>, // 0x2C
     CR: WriteOnly<u32, CR::Register>,     // 0x30
-    __reserved_2: [u32; 4],               // 0x34
+    IFLS: ReadWrite<u32>,                 // 0x34
+    IMSC: ReadWrite<u32, IMSC::Register>, // 0x38
+    __reserved_2: [u32; 2],               // 0x3c
     ICR: WriteOnly<u32, ICR::Register>,   // 0x44
 }
 
 pub enum UartError {
     MailboxError,
 }
-pub type Result<T> = ::core::result::Result<T, UartError>;
+pub type ResultUart<T> = ::core::result::Result<T, UartError>;
 
+#[derive(Copy, Clone)]
 pub struct Uart {
     base_addr: usize,
 }
@@ -152,7 +161,7 @@ impl ops::Deref for Uart {
 }
 
 impl Uart {
-    pub fn new(base_addr: usize) -> Uart {
+    pub const fn new(base_addr: usize) -> Uart {
         Uart { base_addr }
     }
 
@@ -166,7 +175,7 @@ impl Uart {
         &self,
         v_mbox: &mut mbox::Mbox,
         gpio: &gpio::GPIO,
-    ) -> Result<()> {
+    ) -> ResultUart<()> {
         // turn off UART0
         self.CR.set(0);
 
@@ -215,6 +224,11 @@ impl Uart {
         Ok(())
     }
 
+    pub fn enable_rx_irq(&self, irq : &IRQ, bcm: &BCMDeviceMemory) {
+        self.IMSC.set(1 << 4);
+        irq.external_enable(1 << 25);
+    }
+
     fn putc(&self, c: char) {
         // wait until we can send
         loop {
@@ -227,20 +241,44 @@ impl Uart {
         // write the character to the buffer
         self.DR.set(c as u32);
     }
+
 }
 
-impl Appender for Uart {
-
+impl Writer for Uart {
 
     /// Display a string
-    fn puts(&mut self, string: &str) {
+    fn puts(&mut self, string: &str) -> IoResult<usize> {
+        let mut inc = 0usize;
         for c in string.chars() {
             // convert newline to carrige return + newline
             if c == '\n' {
-                self.putc('\r')
+                self.putc('\r');
+                inc = inc + 1;
             }
             self.putc(c);
+            inc = inc + 1;
         }
+        Ok(inc)
+    }
+}
+
+impl Reader for Uart {
+
+    fn read_char(&mut self) -> IoResult<u8> {
+        while self.FR.matches_all(FR::RXFE::SET) {
+            asm::nop();
+        }
+        // Read one character.
+        Ok(self.DR.get() as u8)
+    }
+
+    fn read(&mut self, buf: &mut [u8]) -> IoResult<usize> {
+        let mut pos = 0;
+        while pos < buf.len() {
+            buf[pos] = self.read_char()?;
+            pos = pos + 1;
+        }
+        Ok(pos)
     }
 }
 

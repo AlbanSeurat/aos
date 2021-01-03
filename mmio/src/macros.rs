@@ -14,7 +14,6 @@ macro_rules! debugln {
     }
 }
 
-
 #[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::macros::_print(format_args!($($arg)*)));

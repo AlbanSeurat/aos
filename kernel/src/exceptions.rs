@@ -1,24 +1,22 @@
-mod interruptions;
+
 mod syscalls;
 
-pub use interruptions::{disable_irq, enable_irq};
-use shared::exceptions::set_vbar_el1_checked;
 use shared::exceptions::handlers::ExceptionContext;
-use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1, RegisterReadOnly, RegisterReadWrite};
+use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1, CurrentEL, RegisterReadOnly, RegisterReadWrite};
 use qemu_exit::QEMUExit;
 use cortex_a::{barrier};
 use mmio::{LocalTimer, BCMDeviceMemory};
-use crate::memory;
+use crate::{memory, BCMDEVICES, UART};
+use mmio::logger::Output::Uart;
+use mmio::io::Reader;
 
 extern "C" {
     static __exception_vectors_start: u64;
 }
 
-pub const BCMDEVICES: BCMDeviceMemory = BCMDeviceMemory::new(memory::map::virt::peripheral::START);
-
 pub unsafe fn init() {
     let exception_vectors_start: u64 = &__exception_vectors_start as *const _ as u64;
-    set_vbar_el1_checked(exception_vectors_start);
+    cortex_a::regs::VBAR_EL1.set(exception_vectors_start);
     barrier::isb(barrier::SY);
 }
 
@@ -26,55 +24,52 @@ pub unsafe fn init() {
 /// is overwritten.
 #[no_mangle]
 unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
-    println!("Unknown Exception Context");
-    debug_halt(e);
+    debug_halt("default_exception_handler", e);
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
-
-    println!("Current IRQ handling");
-    debug_halt(e);
+unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
+    if ESR_EL1.read(ESR_EL1::EC) == 0x15 { // SVC call
+        syscalls::syscalls(e);
+    } else {
+        debug_halt("current_elx_synchronous", e);
+    }
 }
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
-
     if ESR_EL1.read(ESR_EL1::EC) == 0x15 { // SVC call
-        match ESR_EL1.read(ESR_EL1::ISS) {
-            1 => syscalls::syscall_one(e.gpr.x[0] as *const u8, e.gpr.x[1] as usize),
-            2 => syscalls::syscall_two(e.gpr.x[0] as u64),
-            3 => syscalls::syscall_three(),
-            _ => ()
-        }
+        syscalls::syscalls(e);
     } else {
-        println!("Synchronous exception lower EL");
-        debug_halt(e);
+        debug_halt("lower_aarch64_synchronous", e);
     }
 }
 
-static mut INC: u32 = 0;
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_irq(_e: &ExceptionContext) {
-
+unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
-    println!("Lower aarch64 IRQ handling : source {:x} - {}", source, INC);
-    INC = INC + 1;
     match source {
         0x800 => LocalTimer::reset(&BCMDEVICES),
-        _ => {}
-    }
+        0x100 => syscalls::reset(),
+        _ => debug_halt("current_elx_irq", e)
+    };
 }
-
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
-    println!("Synchronous exception current EL");
-    debug_halt(e);
+unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) {
+    let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
+    match source {
+        0x800 => LocalTimer::reset(&BCMDEVICES),
+        0x100 => syscalls::reset(),
+        _ => debug_halt("lower_aarch64_irq", e)
+    };
 }
 
-fn debug_halt(e: &ExceptionContext) {
+fn debug_halt(string: &'static str, e: &ExceptionContext) {
+    println!("Kernel Panic ! ");
+    println!("from {}", string);
+    println!("Current EL : {}", CurrentEL.get() >> 2);
     println!("GPR : {:x?}", e.gpr);
     println!("ESR : {:#x?}/{:#x?}", ESR_EL1.read(ESR_EL1::EC), ESR_EL1.get());
     println!("FAR : {:#x?}", FAR_EL1.get());

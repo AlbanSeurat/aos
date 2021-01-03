@@ -62,6 +62,12 @@ pub fn init() -> Result<(), &'static str> {
     Ok(())
 }
 
+#[inline]
+pub fn disable() {
+    // Enable the MMU and turn on data and instruction caching.
+    SCTLR_EL1.modify(SCTLR_EL1::M::Disable + SCTLR_EL1::C::NonCacheable + SCTLR_EL1::I::NonCacheable);
+}
+
 pub fn reset_user_tables () {
     TTBR0_EL1.set_baddr(0);
 }

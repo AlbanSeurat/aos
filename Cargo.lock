@@ -34,6 +34,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "byteorder"
+version = "1.3.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08c48aae112d48ed9f069b33538ea9e3e90aa263cfa3d1c24309612b1f7472de"
+
+[[package]]
 name = "console-traits"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -41,10 +47,10 @@ checksum = "f711b3d1d5c3f7ae7d6428901c0f3e5d5f5c800fcfac86bf0252e96373a2cec6"
 
 [[package]]
 name = "cortex-a"
-version = "5.0.1"
-source = "git+https://github.com/AlbanSeurat/cortex-a?branch=master#01c080ba1f9ebef82a7bdbc0120330ef3e7e6ece"
+version = "5.1.1"
+source = "git+https://github.com/AlbanSeurat/cortex-a?branch=master#9efb34f1372d0c74a735673b801fcb2b2a5ba783"
 dependencies = [
- "register 1.0.1",
+ "register 1.0.2",
 ]
 
 [[package]]
@@ -72,6 +78,7 @@ dependencies = [
 name = "mmio"
 version = "0.1.0"
 dependencies = [
+ "byteorder",
  "console-traits",
  "cortex-a",
  "font8x8",
@@ -80,9 +87,9 @@ dependencies = [
 
 [[package]]
 name = "qemu-exit"
-version = "1.0.0"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b73ae13954572c7ca0ec48ba9fe6a59c0392066eba62f8cb384ffd5addf538c5"
+checksum = "702abe3c3255be20a4d67bda326c4117081a49a57afaf752de4845091bc6b476"
 
 [[package]]
 name = "r0"
@@ -101,9 +108,9 @@ dependencies = [
 
 [[package]]
 name = "register"
-version = "1.0.1"
+version = "1.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "faf386c0c48fea132b7fbbf71c32d1b1d62e7c59043bbabdd15c9ed9f254517e"
+checksum = "f4a247de29ab7cc8f5006cfe775c4a81c704f9914c5e2a79696862e643135433"
 dependencies = [
  "tock-registers 0.6.0",
 ]

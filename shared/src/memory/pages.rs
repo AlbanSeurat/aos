@@ -4,7 +4,6 @@ use core::ops::RangeInclusive;
 use crate::memory::mmu::VIRTUAL_ADDR_START;
 use core::fmt::{Display, Formatter};
 use core::fmt;
-use register::InMemoryRegister;
 use itertools::Itertools;
 
 trait BaseAddr {
@@ -69,9 +68,6 @@ impl<const NUM_TABLES: usize> FixedSizeTranslationTable<{ NUM_TABLES }> {
     ) -> Result<(), &'static str> {
         for phys_page in range.step_by(Granule64KiB::SIZE) {
             let page_descriptor = self.page_descriptor_from(phys_page)?;
-            if page_descriptor.is_valid() {
-                return Err("Virtual page is already mapped");
-            }
             *page_descriptor = PageDescriptor::new(phys_page & Granule64KiB::ALIGN, &attr);
         }
 
@@ -116,10 +112,10 @@ impl<const NUM_TABLES: usize> Display for FixedSizeTranslationTable<{ NUM_TABLES
                     }
                     ).for_each(|(s, e)| {
                     f.write_fmt(format_args!("Table 0x{:08x}..0x{:08x} | Virtual 0x{:08x}..0x{:08x} => Physical 0x{:08x}..0x{:08x}\n",
-                                             &self.lvl3[lvl2_nr][s.0] as * const _ as usize, &self.lvl3[lvl2_nr][e.0] as * const _ as usize,
+                                             &self.lvl3[lvl2_nr][s.0] as *const _ as usize, &self.lvl3[lvl2_nr][e.0] as *const _ as usize,
                                              (lvl2_nr << Granule512MiB::SHIFT) + (s.0 << Granule64KiB::SHIFT),
                                              (lvl2_nr << Granule512MiB::SHIFT) + (e.0 << Granule64KiB::SHIFT),
-                                             s.1.addr() << Granule64KiB::SHIFT, e.1.addr() << Granule64KiB::SHIFT));
+                                             s.1.addr() << Granule64KiB::SHIFT, e.1.addr() << Granule64KiB::SHIFT)).unwrap()
                 });
             }
         }

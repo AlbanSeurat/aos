@@ -3,20 +3,19 @@ use core::ops::{Deref, DerefMut};
 use crate::uart::Uart;
 use crate::syscall::SysCall;
 use crate::FrameBufferConsole;
-use core::borrow::BorrowMut;
+use crate::io::{Writer, IoResult};
+use core::fmt::Error;
 
 pub struct Logger {
     output: Output,
 }
 
-pub trait Appender {
-    fn puts(&mut self, _string: &str);
-}
-
 pub struct NullLogger;
 
-impl Appender for NullLogger {
-    fn puts(&mut self, _string: &str) {}
+impl Writer for NullLogger {
+    fn puts(&mut self, string: &str) -> IoResult<usize> {
+        Ok(string.len())
+    }
 }
 
 /// Possible outputs which the console can store.
@@ -58,7 +57,7 @@ impl From<FrameBufferConsole> for Output {
 }
 
 impl Deref for Logger {
-    type Target = dyn Appender;
+    type Target = dyn Writer;
 
     fn deref(&self) -> &Self::Target {
         match &self.output {

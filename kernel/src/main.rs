@@ -8,27 +8,21 @@
 
 #[macro_use] extern crate mmio;
 use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
-use qemu_exit::QEMUExit;
 use cortex_a::regs::{SP_EL0, ELR_EL1, RegisterReadWrite};
 use cortex_a::asm;
-use crate::exceptions::BCMDEVICES;
 use shared::memory::mmu::VIRTUAL_ADDR_START;
+use mmio::{BCMDeviceMemory, Uart};
+use crate::global::{UART, BCMDEVICES};
 
 mod memory;
 mod exceptions;
 mod scheduler;
+mod global;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
     static mut __bss_start: u64;
     static mut __bss_end: u64;
-}
-
-#[panic_handler]
-fn my_panic(info: &core::panic::PanicInfo) -> ! {
-    println!("{:?}", info);
-    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
-    QEMU_EXIT_HANDLE.exit_failure()
 }
 
 /// Entrypoint of the kernel.
@@ -38,13 +32,13 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
-    let _gpio = mmio::GPIO::new(memory::map::virt::GPIO_BASE);
     let v_mbox = mmio::Mbox::new(memory::map::virt::MBOX_BASE);
-    let uart = mmio::Uart::new(memory::map::virt::UART_BASE);
     let _dwhci = mmio::DWHCI::new(memory::map::virt::USB_BASE);
-    let _irq = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
+    let irq = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
+    let bcm = mmio::BCMDeviceMemory::new(memory::map::peripheral::START);
     let mut console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
-    mmio::LOGGER.appender(uart.into());
+
+    mmio::LOGGER.appender(UART.into());
     mmio::SCREEN.appender( console.into());
     println!("MMIO live in upper level");
 
@@ -56,14 +50,15 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
         _ => {}
     }
 
-    mmio::timer::LocalTimer::setup(&BCMDEVICES);
+    // setup IRQs
+    UART.enable_rx_irq(&irq, &bcm);
+    //mmio::timer::LocalTimer::setup(&BCMDEVICES);
 
     let bytes = include_bytes!("../../program.img");
     println!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
     core::ptr::copy(bytes as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len());
 
     println!("JUMP to program");
-
     SP_EL0.set(0x00400000);
     ELR_EL1.set(memory::map::physical::PROG_START as u64);
     asm::eret();

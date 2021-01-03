@@ -34,6 +34,14 @@ impl IRQ {
         IRQ { base_addr }
     }
 
+    pub unsafe fn enable() {
+        llvm_asm!("msr daifclr, #2");
+    }
+
+    pub unsafe fn disable() {
+        llvm_asm!("msr daifset, #2");
+    }
+
     /// Returns a pointer to the register block
     fn ptr(&self) -> *const RegisterBlock {
         self.base_addr as *const _

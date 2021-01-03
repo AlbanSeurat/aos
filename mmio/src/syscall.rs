@@ -1,18 +1,19 @@
-use crate::logger::Appender;
+use crate::io::{Writer, IoResult};
 
 pub struct SysCall {
 
 }
 
-impl Appender for SysCall {
+impl Writer for SysCall {
 
     /// Display a string
-    fn puts(&mut self, string: &str) {
+    fn puts(&mut self, string: &str) -> IoResult<usize> {
         unsafe {
             llvm_asm!("mov x0, $0" :: "r"(string.as_ptr()));
             llvm_asm!("mov x1, $0" :: "r"(string.as_bytes().len()));
             llvm_asm!("SVC 1")
         }
+        Ok(string.len())
     }
 
 }

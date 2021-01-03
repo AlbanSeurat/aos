@@ -3,6 +3,8 @@
 
 use crate::logger::Logger;
 
+pub mod io;
+
 mod delays;
 mod gpio;
 mod mbox;
