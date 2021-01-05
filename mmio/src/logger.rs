@@ -13,8 +13,8 @@ pub struct Logger {
 pub struct NullLogger;
 
 impl Writer for NullLogger {
-    fn puts(&mut self, string: &str) -> IoResult<usize> {
-        Ok(string.len())
+    fn write(&mut self, bytes: &[u8]) -> IoResult<usize> {
+        Ok(bytes.len())
     }
 }
 
@@ -82,7 +82,7 @@ impl DerefMut for Logger {
 
 impl fmt::Write for Logger {
     fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.puts(s);
+        self.writes(s);
         Ok(())
     }
 }

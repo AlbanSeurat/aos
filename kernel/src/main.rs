@@ -39,7 +39,7 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     let mut console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
 
     mmio::LOGGER.appender(UART.into());
-    mmio::SCREEN.appender( console.into());
+    mmio::SCREEN.appender( UART.into());
     println!("MMIO live in upper level");
 
     exceptions::init();

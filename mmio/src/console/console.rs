@@ -21,10 +21,6 @@ impl FrameBufferConsole {
             v_mbox : boxx
         }
     }
-
-    pub fn write(&mut self, s: &str) -> Result<(), &'static str> {
-        self.write_string(s)
-    }
 }
 
 impl UnicodeConsole for FrameBufferConsole {
@@ -109,8 +105,8 @@ impl BaseConsole for FrameBufferConsole {
 
 impl Writer for FrameBufferConsole {
 
-    fn puts(&mut self, string: &str) -> IoResult<usize> {
-        self.write(string);
-        Ok(string.len())
+    fn write(&mut self, buf: &[u8]) -> IoResult<usize> {
+        self.write_string(core::str::from_utf8(buf).expect("malformated utf8 string"));
+        Ok(buf.len())
     }
 }

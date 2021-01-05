@@ -40,4 +40,5 @@ pub unsafe extern "C" fn _main() -> () {
     println!("show a second message after one second");
 
     syscall.halt();
+
 }

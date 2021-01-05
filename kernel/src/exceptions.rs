@@ -49,6 +49,7 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
 #[no_mangle]
 unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
+    println!("Lower aarch64 IRQ handling : source {:x}", source);
     match source {
         0x800 => LocalTimer::reset(&BCMDEVICES),
         0x100 => syscalls::reset(),
@@ -59,6 +60,7 @@ unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) {
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
+    println!("Lower aarch64 IRQ handling : source {:x}", source);
     match source {
         0x800 => LocalTimer::reset(&BCMDEVICES),
         0x100 => syscalls::reset(),

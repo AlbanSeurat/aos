@@ -1,9 +1,10 @@
 use mmio::Uart;
-use mmio::io::{IoResult, Reader};
+use mmio::io::{IoResult, Reader, Writer};
 use crate::memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
 use cortex_a::regs::{SP, RegisterReadWrite, ELR_EL2, SP_EL1, HCR_EL2, CNTHCTL_EL2, CNTVOFF_EL2, SPSR_EL2};
 use cortex_a::asm;
 use crate::{STACK_START, memory, exceptions};
+use mmio::logger::Logger;
 
 #[inline]
 pub fn setup_el1_and_jump_high() -> ! {
@@ -70,9 +71,13 @@ fn setup_mmu() -> Result<(), &'static str>{
 }
 
 unsafe fn load_kernel(uart: &mut Uart) -> IoResult<()> {
-    debugln!("loading kernel from serial");
+    debugln!("load kernel");
+    uart.clear()?;
+    uart.writes("\x03\x03\x03")?;
     let len = uart.read_short()?;
-    debugln!("Kernel size from serial : {}", len);
+    uart.writes("\x03\x03\x03")?;
+    uart.write_short(len);
+    uart.writes("\x03\x03\x03")?;
     let kernel_addr: *mut u8 = memory::map::physical::KERN_START as *mut u8;
     unsafe {
         // Read the kernel byte by byte.
@@ -80,5 +85,6 @@ unsafe fn load_kernel(uart: &mut Uart) -> IoResult<()> {
             core::ptr::write_volatile(kernel_addr.offset(i as isize), uart.read_char()?);
         }
     }
+    uart.writes("\x03\x03\x03")?;
     Ok(())
 }

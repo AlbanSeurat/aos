@@ -77,6 +77,17 @@ register_bitfields! {
             SixBit = 0b01,
             SevenBit = 0b10,
             EightBit = 0b11
+        ],
+
+        /// Enable FIFOs:
+        ///
+        /// 0 = FIFOs are disabled (character mode) that is, the FIFOs become 1-byte-deep holding
+        /// registers
+        ///
+        /// 1 = transmit and receive FIFO buffers are enabled (FIFO mode).
+        FEN  OFFSET(4) NUMBITS(1) [
+            FifosDisabled = 0,
+            FifosEnabled = 1
         ]
     ],
 
@@ -217,19 +228,18 @@ impl Uart {
         self.IBRD.write(IBRD::IBRD.val(2)); // Results in 115200 baud
         self.FBRD.write(FBRD::FBRD.val(0xB));
         self.LCRH.write(LCRH::WLEN::EightBit); // 8N1
-
         self.CR
             .write(CR::UARTEN::Enabled + CR::TXE::Enabled + CR::RXE::Enabled);
 
         Ok(())
     }
 
-    pub fn enable_rx_irq(&self, irq : &IRQ, bcm: &BCMDeviceMemory) {
+    pub unsafe fn enable_rx_irq(&self, irq : &IRQ, bcm: &BCMDeviceMemory) {
         self.IMSC.set(1 << 4);
         irq.external_enable(1 << 25);
     }
 
-    fn putc(&self, c: char) {
+    fn putc(&self, c: u8) {
         // wait until we can send
         loop {
             if !self.FR.is_set(FR::TXFF) {
@@ -247,15 +257,10 @@ impl Uart {
 impl Writer for Uart {
 
     /// Display a string
-    fn puts(&mut self, string: &str) -> IoResult<usize> {
+    fn write(&mut self, bytes: &[u8]) -> IoResult<usize> {
         let mut inc = 0usize;
-        for c in string.chars() {
-            // convert newline to carrige return + newline
-            if c == '\n' {
-                self.putc('\r');
-                inc = inc + 1;
-            }
-            self.putc(c);
+        for c in bytes {
+            self.putc(*c);
             inc = inc + 1;
         }
         Ok(inc)
@@ -263,6 +268,14 @@ impl Writer for Uart {
 }
 
 impl Reader for Uart {
+    fn clear(&mut self) -> IoResult<u8> {
+        let mut pos = 0;
+        while !self.FR.matches_all(FR::RXFE::SET) {
+            self.DR.get();
+            pos = pos + 1;
+        }
+        Ok(pos)
+    }
 
     fn read_char(&mut self) -> IoResult<u8> {
         while self.FR.matches_all(FR::RXFE::SET) {
