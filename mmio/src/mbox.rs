@@ -27,6 +27,7 @@ use register::{
     mmio::{ReadOnly, WriteOnly},
     register_bitfields,
 };
+use crate::{debugln, debug};
 
 register_bitfields! {
     u32,
@@ -133,6 +134,8 @@ impl Mbox {
 
         let buf_ptr = self.buffer.as_ptr() as u32;
 
+        debugln!("{:x}, {:x}", &self.buffer as * const _ as usize, buf_ptr);
+
         // write the address of our message to the mailbox with channel identifier
         self.WRITE.set((buf_ptr & !0xF) | (channel & 0xF));
 
@@ -148,6 +151,8 @@ impl Mbox {
             }
 
             let resp: u32 = self.READ.get();
+
+            debugln!("response : {:x}", (resp & !0xF));
 
             // is it a response to our message?
             if ((resp & 0xF) == channel) && ((resp & !0xF) == buf_ptr) {

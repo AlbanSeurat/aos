@@ -28,7 +28,7 @@ impl FrameBuffer {
         v_mbox.buffer[7] = mbox::tag::SET_SCREEN_VIRT_RES;
         v_mbox.buffer[8] = 8;
         v_mbox.buffer[9] = 8;
-        v_mbox.buffer[10] = 1025;         //FrameBufferInfo.virtual_width
+        v_mbox.buffer[10] = 1024;         //FrameBufferInfo.virtual_width
         v_mbox.buffer[11] = 1536;         //FrameBufferInfo.virtual_height
 
         v_mbox.buffer[12] = mbox::tag::SET_SCREEN_VIRT_OFF;
@@ -62,7 +62,8 @@ impl FrameBuffer {
 
         compiler_fence(Ordering::Release);
 
-        if v_mbox.call(mbox::channel::PROP).is_ok() && v_mbox.buffer[20] == 32 && v_mbox.buffer[28] != 0 {
+        let result = v_mbox.call(mbox::channel::PROP);
+        if result.is_ok() && v_mbox.buffer[20] == 32 && v_mbox.buffer[28] != 0 {
             debugln!("framebuffer base pointer {:x}", v_mbox.buffer[28] as usize);
             return FrameBuffer {
                 width: v_mbox.buffer[5],
@@ -71,6 +72,9 @@ impl FrameBuffer {
                 base_pointer: baseaddr + v_mbox.buffer[28] as usize,
             };
         } else {
+            debugln!("Result is {:?}", result.is_ok());
+            debugln!("buffer[20] = {:x}", v_mbox.buffer[20]);
+            debugln!("buffer[28] = {:x}", v_mbox.buffer[28]);
             panic!("Error setting up screen");
         };
     }

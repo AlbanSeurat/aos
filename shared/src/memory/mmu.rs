@@ -79,6 +79,9 @@ pub fn setup_kernel_tables(descriptors: &[Descriptor]) -> Result<(), &'static st
 
         // Point to the LVL2 table base address in TTBR1.
         TTBR1_EL1.set_baddr(base_addr as u64);
+        barrier::dsb(barrier::ISHST);
+        llvm_asm!("TLBI VMALLE1");
+        barrier::dsb(barrier::ISH);
         barrier::isb(barrier::SY);
     }
     Ok(())
@@ -91,6 +94,9 @@ pub fn setup_user_tables(descriptors: &[Descriptor]) -> Result<(), &'static str>
 
         // Point to the LVL2 table base address in TTBR0.
         TTBR0_EL1.set_baddr(base_addr as u64);
+        barrier::dsb(barrier::ISHST);
+        llvm_asm!("TLBI VMALLE1");
+        barrier::dsb(barrier::ISH);
         barrier::isb(barrier::SY);
     }
     Ok(())
