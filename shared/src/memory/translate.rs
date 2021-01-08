@@ -176,6 +176,10 @@ impl convert::From<AttributeFields> for register::FieldValue<u64, STAGE1_DESCRIP
     fn from(attribute_fields: AttributeFields) -> Self {
         // Memory attributes.
         let mut desc = match attribute_fields.mem_attributes {
+            MemAttributes::UncacheableDRAM => {
+                STAGE1_DESCRIPTOR::SH::InnerShareable
+                    + STAGE1_DESCRIPTOR::AttrIndx.val(mair::NORMAL_NON_CACHABLE)
+            }
             MemAttributes::CacheableDRAM => {
                 STAGE1_DESCRIPTOR::SH::InnerShareable
                     + STAGE1_DESCRIPTOR::AttrIndx.val(mair::NORMAL)

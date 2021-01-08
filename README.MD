@@ -25,9 +25,9 @@ prepare the sender
 
 ```python3.9 load.py cu.serial-slave```
 
-```./run.sh```
+run arguments
 
-run arguments 
+```./run.sh```
 
 #### show instructions and interruption
 
@@ -38,7 +38,7 @@ run arguments
 
 * wire the cable et setup the link 
 
-```python3 load.py `ls /dev/cu.usb*```
+```python3 load.py `ls /dev/cu.usb*` ```
 
 * launch raspi (python will show the debug output)
 
@@ -53,9 +53,4 @@ https://github.com/raspberrypi/firmware/tree/master/boot
 
 Schematics with my USB-to-serial 
 
-# References
-
-https://superuser.com/questions/1373226/how-to-redirect-qemu-serial-output-to-both-a-file-and-the-terminal-or-a-port/1412150
-https://serverfault.com/questions/872238/qemu-and-serial-ports-on-the-guest-os
-https://github.com/clokey/PublicCode/tree/master/MacOSXVirtualSerialPort
 

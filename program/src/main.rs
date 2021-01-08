@@ -10,6 +10,7 @@
 use cortex_a::asm;
 use mmio::syscall::SysCall;
 use qemu_exit::QEMUExit;
+use mmio::HandleType;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -37,8 +38,12 @@ pub unsafe extern "C" fn _main() -> () {
     let syscall = SysCall { };
     syscall.sleep(1);
 
-    println!("show a second message after one second");
+    let fd = syscall.open(HandleType::TIMER);
 
-    syscall.halt();
+    println!("opened a timer resources to wait for event with fd : {}", fd);
+
+    loop {
+        asm::wfi();
+    }
 
 }

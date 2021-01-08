@@ -1,7 +1,11 @@
 use core::sync::atomic::{compiler_fence, Ordering};
-use core::ptr;
-use crate::mbox;
+use core::{ptr, mem};
+use crate::{mbox, DMA};
 use crate::{debugln, debug};
+use core::alloc::{Allocator, Layout};
+
+#[derive(Debug)]
+pub struct FrameBufferError {}
 
 pub struct FrameBuffer {
     pub(crate) width: u32,
@@ -13,85 +17,48 @@ pub struct FrameBuffer {
 const BPP: u32 = 32;
 
 impl FrameBuffer {
-    pub fn new(v_mbox: &mut mbox::Mbox, baseaddr: usize) -> FrameBuffer {
-        const REQUEST_SIZE: u32 = 35 * 4;
+    pub fn new(v_mbox: &mut mbox::Mbox, baseaddr: usize) -> Result<FrameBuffer, FrameBufferError> {
 
-        v_mbox.buffer[0] = REQUEST_SIZE;
-        v_mbox.buffer[1] = mbox::REQUEST;
+        v_mbox.clear();
 
-        v_mbox.buffer[2] = mbox::tag::SET_SCREEN_PHY_RES;
-        v_mbox.buffer[3] = 8;
-        v_mbox.buffer[4] = 8;
-        v_mbox.buffer[5] = 1024;         //FrameBufferInfo.width
-        v_mbox.buffer[6] = 768;          //FrameBufferInfo.height
-
-        v_mbox.buffer[7] = mbox::tag::SET_SCREEN_VIRT_RES;
-        v_mbox.buffer[8] = 8;
-        v_mbox.buffer[9] = 8;
-        v_mbox.buffer[10] = 1024;         //FrameBufferInfo.virtual_width
-        v_mbox.buffer[11] = 1536;         //FrameBufferInfo.virtual_height
-
-        v_mbox.buffer[12] = mbox::tag::SET_SCREEN_VIRT_OFF;
-        v_mbox.buffer[13] = 8;
-        v_mbox.buffer[14] = 8;
-        v_mbox.buffer[15] = 0;           //FrameBufferInfo.x_offset
-        v_mbox.buffer[16] = 0;           //FrameBufferInfo.y.offset
-
-        v_mbox.buffer[17] = mbox::tag::SET_SCREEN_DEPTH;
-        v_mbox.buffer[18] = 4;
-        v_mbox.buffer[19] = 4;
-        v_mbox.buffer[20] = 32;          //FrameBufferInfo.depth
-
-        v_mbox.buffer[21] = mbox::tag::SET_SCREEN_ORDER;
-        v_mbox.buffer[22] = 4;
-        v_mbox.buffer[23] = 4;
-        v_mbox.buffer[24] = 1;           //RGB, not BGR preferably
-
-        v_mbox.buffer[25] = mbox::tag::GET_SCREEN_FRAME_BUFFER; //get framebuffer, gets alignment on request
-        v_mbox.buffer[26] = 8;
-        v_mbox.buffer[27] = 8;
-        v_mbox.buffer[28] = 4096;        //FrameBufferInfo.pointer
-        v_mbox.buffer[29] = 0;           //FrameBufferInfo.size
-
-        v_mbox.buffer[30] = mbox::tag::GET_PITCH; //get pitch
-        v_mbox.buffer[31] = 4;
-        v_mbox.buffer[32] = 4;
-        v_mbox.buffer[33] = 0;           //FrameBufferInfo.pitch
-
-        v_mbox.buffer[34] = mbox::tag::LAST;
-
-        compiler_fence(Ordering::Release);
-
-        let result = v_mbox.call(mbox::channel::PROP);
-        if result.is_ok() && v_mbox.buffer[20] == 32 && v_mbox.buffer[28] != 0 {
-            debugln!("framebuffer base pointer {:x}", v_mbox.buffer[28] as usize);
-            return FrameBuffer {
-                width: v_mbox.buffer[5],
-                height: v_mbox.buffer[6],
-                pitch: v_mbox.buffer[33],
-                base_pointer: baseaddr + v_mbox.buffer[28] as usize,
-            };
+        v_mbox.prepare(mbox::tag::SCREEN_PHY_RES, 8, 8, &[1024, 768]);
+        v_mbox.prepare(mbox::tag::SCREEN_VIRT_RES, 8, 8, &[1024, 1536]);
+        v_mbox.prepare(mbox::tag::SET_SCREEN_VIRT_OFF, 8, 8, &[0, 0]);
+        v_mbox.prepare(mbox::tag::SET_SCREEN_DEPTH, 4, 4, &[32]);
+        v_mbox.prepare(mbox::tag::SET_SCREEN_ORDER, 4, 4, &[1]);
+        v_mbox.prepare(mbox::tag::GET_SCREEN_FRAME_BUFFER, 8, 4, &[16, 0]);
+        v_mbox.prepare(mbox::tag::GET_PITCH, 4, 4, &[0]);
+        
+        let result = v_mbox.request(mbox::channel::PROP);
+        if result.is_ok() && v_mbox.dma[20] == 32 && v_mbox.dma[28] != 0 {
+            return Ok(FrameBuffer {
+                width: v_mbox.dma[5],
+                height: v_mbox.dma[6],
+                pitch: v_mbox.dma[33],
+                base_pointer: (v_mbox.dma[28] & !0xC000_0000 ) as usize,
+            });
         } else {
-            debugln!("Result is {:?}", result.is_ok());
-            debugln!("buffer[20] = {:x}", v_mbox.buffer[20]);
-            debugln!("buffer[28] = {:x}", v_mbox.buffer[28]);
-            panic!("Error setting up screen");
-        };
+            Err(FrameBufferError {})
+        }
     }
 
-    pub fn scroll_down(&self, v_mbox: &mut mbox::Mbox, size: u32) {
-        v_mbox.buffer[0] = 8 * 4;
-        v_mbox.buffer[1] = mbox::REQUEST;
+    pub fn scroll_down(&self, v_mbox: &mut mbox::Mbox, size: u32) -> Result<(), FrameBufferError> {
+        v_mbox.dma[0] = 8 * 4;
+        v_mbox.dma[1] = mbox::REQUEST;
 
-        v_mbox.buffer[2] = mbox::tag::SET_SCREEN_VIRT_OFF;
-        v_mbox.buffer[3] = 8;
-        v_mbox.buffer[4] = 8;
-        v_mbox.buffer[5] = 0;                  //FrameBufferInfo.x_offset
-        v_mbox.buffer[6] = size * 8;           //FrameBufferInfo.y.offset
-        v_mbox.buffer[7] = mbox::tag::LAST;
+        v_mbox.dma[2] = mbox::tag::SET_SCREEN_VIRT_OFF;
+        v_mbox.dma[3] = 8;
+        v_mbox.dma[4] = 8;
+        v_mbox.dma[5] = 0;                  //FrameBufferInfo.x_offset
+        v_mbox.dma[6] = size * 8;           //FrameBufferInfo.y.offset
+        v_mbox.dma[7] = mbox::tag::LAST;
 
-        if v_mbox.call(mbox::channel::PROP).is_err() {
-            panic!("Error setting up screen");
+        v_mbox.call(&v_mbox.dma, mbox::channel::PROP).map_err(|_| FrameBufferError {})
+    }
+
+    pub fn print_pixel_2(&self, x: u32, y: u32, pixel: u32) {
+        unsafe {
+            ptr::write((self.base_pointer + x as usize) as *mut u32, pixel);
         }
     }
 

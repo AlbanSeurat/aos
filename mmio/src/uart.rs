@@ -191,22 +191,22 @@ impl Uart {
         self.CR.set(0);
 
         // set up clock for consistent divisor values
-        v_mbox.buffer[0] = 9 * 4;
-        v_mbox.buffer[1] = mbox::REQUEST;
-        v_mbox.buffer[2] = mbox::tag::SETCLKRATE;
-        v_mbox.buffer[3] = 12;
-        v_mbox.buffer[4] = 8;
-        v_mbox.buffer[5] = mbox::clock::UART; // UART clock
-        v_mbox.buffer[6] = 4_000_000; // 4Mhz
-        v_mbox.buffer[7] = 0; // skip turbo setting
-        v_mbox.buffer[8] = mbox::tag::LAST;
+        v_mbox.stack[0] = 9 * 4;
+        v_mbox.stack[1] = mbox::REQUEST;
+        v_mbox.stack[2] = mbox::tag::SETCLKRATE;
+        v_mbox.stack[3] = 12;
+        v_mbox.stack[4] = 8;
+        v_mbox.stack[5] = mbox::clock::UART; // UART clock
+        v_mbox.stack[6] = 4_000_000; // 4Mhz
+        v_mbox.stack[7] = 0; // skip turbo setting
+        v_mbox.stack[8] = mbox::tag::LAST;
 
         // Insert a compiler fence that ensures that all stores to the
         // mbox buffer are finished before the GPU is signaled (which
         // is done by a store operation as well).
         compiler_fence(Ordering::Release);
 
-        if v_mbox.call(mbox::channel::PROP).is_err() {
+        if v_mbox.call(&v_mbox.stack, mbox::channel::PROP).is_err() {
             return Err(UartError::MailboxError); // Abort if UART clocks couldn't be set
         };
 

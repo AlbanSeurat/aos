@@ -2,6 +2,7 @@ use core::ops::RangeInclusive;
 
 #[derive(Copy, Clone, Debug)]
 pub enum MemAttributes {
+    UncacheableDRAM,
     CacheableDRAM,
     Device,
 }

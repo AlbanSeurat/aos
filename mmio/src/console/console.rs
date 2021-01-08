@@ -8,14 +8,14 @@ pub struct FrameBufferConsole {
     lfb: FrameBuffer,
     pos: Position,
     inc: u32,
-    v_mbox: mbox::Mbox,
+    v_mbox: mbox::Mbox<'static>,
 }
 
 impl FrameBufferConsole {
-    pub fn new(v_mbox: mbox::Mbox, baseaddr: usize) -> FrameBufferConsole {
+    pub fn new(v_mbox: mbox::Mbox<'static>, baseaddr: usize) -> FrameBufferConsole {
         let mut boxx = v_mbox;
         FrameBufferConsole {
-            lfb : FrameBuffer::new(&mut boxx, baseaddr),
+            lfb : FrameBuffer::new(&mut boxx, baseaddr).unwrap(),
             pos : Position::origin(),
             inc : 0,
             v_mbox : boxx
@@ -99,7 +99,7 @@ impl BaseConsole for FrameBufferConsole {
             self.lfb.flip();
             self.inc = 0;
         }
-        Ok(self.lfb.scroll_down(&mut self.v_mbox, self.inc as u32))
+        self.lfb.scroll_down(&mut self.v_mbox, self.inc as u32).map_err(|_| "scroll failed")
     }
 }
 

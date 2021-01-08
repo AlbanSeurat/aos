@@ -30,7 +30,7 @@ impl ops::Deref for IRQ {
 }
 
 impl IRQ {
-    pub fn new(base_addr: usize) -> IRQ {
+    pub const fn new(base_addr: usize) -> IRQ {
         IRQ { base_addr }
     }
 

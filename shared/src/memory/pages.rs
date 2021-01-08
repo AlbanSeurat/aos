@@ -1,4 +1,4 @@
-use crate::memory::mapping::{AttributeFields, Descriptor};
+use crate::memory::mapping::{AttributeFields, Descriptor, Translation};
 use crate::memory::translate::{PageDescriptor, TableDescriptor, Granule512MiB, TranslationGranule, Granule64KiB};
 use core::ops::RangeInclusive;
 use crate::memory::mmu::VIRTUAL_ADDR_START;
@@ -64,11 +64,16 @@ impl<const NUM_TABLES: usize> FixedSizeTranslationTable<{ NUM_TABLES }> {
     unsafe fn map_pages_at(
         &mut self,
         range: RangeInclusive<usize>,
+        translation: &Translation,
         attr: &AttributeFields,
     ) -> Result<(), &'static str> {
         for phys_page in range.step_by(Granule64KiB::SIZE) {
             let page_descriptor = self.page_descriptor_from(phys_page)?;
-            *page_descriptor = PageDescriptor::new(phys_page & Granule64KiB::ALIGN, &attr);
+            let output_addr = match translation {
+                Translation::Identity => phys_page,
+                Translation::Offset(a) => a + phys_page,
+            };
+            *page_descriptor = PageDescriptor::new(output_addr & Granule64KiB::ALIGN, &attr);
         }
 
         Ok(())
@@ -88,7 +93,7 @@ impl<const NUM_TABLES: usize> FixedSizeTranslationTable<{ NUM_TABLES }> {
         for desc in descriptors.iter() {
             let range = (desc.virtual_range)();
             unsafe {
-                self.map_pages_at(range, &desc.map.attribute_fields)?;
+                self.map_pages_at(range, &desc.map.translation, &desc.map.attribute_fields)?;
             }
         }
         Ok(())

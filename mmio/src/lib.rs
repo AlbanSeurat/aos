@@ -1,5 +1,10 @@
 #![no_std]
 #![feature(llvm_asm)]
+#![feature(allocator_api)]
+#![feature(nonnull_slice_from_raw_parts)]
+
+#[macro_use]
+extern crate num_derive;
 
 use crate::logger::Logger;
 
@@ -17,9 +22,8 @@ pub mod logger;
 pub mod macros;
 mod bcm;
 mod console;
-
-pub static mut LOGGER: Logger = Logger::new();
-pub static mut SCREEN: Logger = Logger::new();
+mod dma;
+mod process;
 
 pub use gpio::GPIO;
 pub use mbox::Mbox;
@@ -31,3 +35,9 @@ pub use timer::LocalTimer;
 pub use irq::IRQ;
 pub use bcm::BCMDeviceMemory;
 pub use console::FrameBufferConsole;
+pub use dma::MemoryRegion;
+pub use process::handle::{Handle, HandleType};
+
+pub static mut LOGGER: Logger = Logger::new();
+pub static mut SCREEN: Logger = Logger::new();
+pub static mut DMA : dma::DMAMemory = dma::DMAMemory::new();

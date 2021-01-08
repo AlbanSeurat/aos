@@ -47,7 +47,7 @@ impl ops::Deref for DWHCI {
 
 
 impl DWHCI {
-    pub fn new(base_addr: usize) -> DWHCI {
+    pub const fn new(base_addr: usize) -> DWHCI {
         DWHCI { base_addr }
     }
 

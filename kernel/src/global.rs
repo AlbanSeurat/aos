@@ -1,8 +1,11 @@
-use mmio::{BCMDeviceMemory, Uart};
+use mmio::{BCMDeviceMemory, Uart, DWHCI};
 use crate::memory;
 use qemu_exit::QEMUExit;
 
 pub const BCMDEVICES: BCMDeviceMemory = BCMDeviceMemory::new(memory::map::virt::peripheral::START);
+pub const DWHCI: DWHCI = mmio::DWHCI::new(memory::map::virt::USB_BASE);
+pub const IRQ: mmio::IRQ = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
+
 pub const UART: Uart = mmio::Uart::new(memory::map::virt::UART_BASE);
 
 #[panic_handler]
