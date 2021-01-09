@@ -2,7 +2,6 @@ use crate::io::{Writer, IoResult};
 use crate::HandleType;
 use num_traits::ToPrimitive;
 
-
 pub struct SysCall {
 
 }

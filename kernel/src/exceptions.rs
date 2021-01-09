@@ -20,34 +20,37 @@ pub unsafe fn init() {
     barrier::isb(barrier::SY);
 }
 
+
 /// The default exceptions, invoked for every exceptions type unless the handler
 /// is overwritten.
 #[no_mangle]
-unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
+unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) -> u64 {
     debug_halt("default_exception_handler", e);
+    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
+unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) -> u64 {
     if ESR_EL1.read(ESR_EL1::EC) == 0x15 { // SVC call
-        syscalls::syscalls(e);
+        syscalls::syscalls(e)
     } else {
         debug_halt("current_elx_synchronous", e);
+        u64::MAX
     }
 }
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
+unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) -> u64 {
     if ESR_EL1.read(ESR_EL1::EC) == 0x15 { // SVC call
-        syscalls::syscalls(e);
+        syscalls::syscalls(e)
     } else {
         debug_halt("lower_aarch64_synchronous", e);
+        u64::MAX
     }
 }
 
-
 #[no_mangle]
-unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
+unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) -> u64 {
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
     println!("Lower aarch64 IRQ handling : source {:x}", source);
     match source {
@@ -55,10 +58,11 @@ unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
         0x100 => syscalls::reset(),
         _ => debug_halt("current_elx_irq", e)
     };
+    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) {
+unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) -> u64 {
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
     println!("Lower aarch64 IRQ handling : source {:x}", source);
     match source {
@@ -66,6 +70,7 @@ unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) {
         0x100 => syscalls::reset(),
         _ => debug_halt("lower_aarch64_irq", e)
     };
+    u64::MAX
 }
 
 fn debug_halt(string: &'static str, e: &ExceptionContext) {

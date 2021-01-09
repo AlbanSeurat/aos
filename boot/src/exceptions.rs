@@ -17,13 +17,14 @@ pub unsafe fn init_el2() {
 /// The default exceptions, invoked for every exceptions type unless the handler
 /// is overwritten.
 #[no_mangle]
-unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
+unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) -> u64 {
     debugln!("Unknown Exception Context");
     debug_halt(e);
+    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
+unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) -> u64 {
     if ESR_EL2.read(ESR_EL2::EC) == 0x16 { // HVC call
         match ESR_EL2.read(ESR_EL2::ISS) {
             1 => setup_el1_and_jump_high(),
@@ -33,10 +34,11 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
         debugln!("Synchronous exception lower EL");
         debug_halt(e);
     }
+    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
+unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) -> u64 {
 
     if ESR_EL2.read(ESR_EL2::EC) == 0x16 { // HVC call
         match ESR_EL2.read(ESR_EL2::ISS) {
@@ -47,18 +49,21 @@ unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
         debugln!("Synchronous exception current EL");
         debug_halt(e);
     }
+    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
+unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) -> u64 {
     debugln!("Current IRQ handling");
     debug_halt(e);
+    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) {
+unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) -> u64 {
     debugln!("Lower aarch64 IRQ handling");
     debug_halt(e);
+    u64::MAX
 }
 
 

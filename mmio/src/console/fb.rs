@@ -28,7 +28,7 @@ impl FrameBuffer {
         v_mbox.prepare(mbox::tag::SET_SCREEN_ORDER, 4, 4, &[1]);
         v_mbox.prepare(mbox::tag::GET_SCREEN_FRAME_BUFFER, 8, 4, &[16, 0]);
         v_mbox.prepare(mbox::tag::GET_PITCH, 4, 4, &[0]);
-        
+
         let result = v_mbox.request(mbox::channel::PROP);
         if result.is_ok() && v_mbox.dma[20] == 32 && v_mbox.dma[28] != 0 {
             return Ok(FrameBuffer {

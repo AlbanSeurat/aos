@@ -38,7 +38,7 @@ pub unsafe extern "C" fn _main() -> () {
     let syscall = SysCall { };
     syscall.sleep(1);
 
-    let fd = syscall.open(HandleType::TIMER);
+    let fd = syscall.open(HandleType::TIMER );
 
     println!("opened a timer resources to wait for event with fd : {}", fd);
 

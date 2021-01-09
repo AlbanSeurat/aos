@@ -34,6 +34,15 @@ extern "C" {
 
 const STACK_START: u64 = 0x80_000;
 
+#[no_mangle]
+extern "C" fn test() -> u64 {
+    let a = 544554;
+    if a < STACK_START {
+        return 33234;
+    }
+    return 544554;
+}
+
 unsafe fn start() -> ! {
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
 
