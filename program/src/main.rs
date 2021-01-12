@@ -10,7 +10,7 @@
 use cortex_a::asm;
 use mmio::syscall::SysCall;
 use qemu_exit::QEMUExit;
-use mmio::HandleType;
+use mmio::{HandleType, TimerHandle};
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -34,16 +34,20 @@ pub unsafe extern "C" fn _main() -> () {
     mmio::SCREEN.appender(SysCall { }.into());
 
     println!("show a message using SVC call");
+    let mut count = 0;
+    loop {
+        let syscall = SysCall { };
+        syscall.sleep(1);
+        println!("Count every seconds {}", count);
+        count = count + 1;
+    }
 
-    let syscall = SysCall { };
-    syscall.sleep(1);
+}
 
-    let fd = syscall.open(HandleType::TIMER );
-
-    println!("opened a timer resources to wait for event with fd : {}", fd);
+pub extern "C" fn timer_handler() -> ! {
+    debugln!("Timer fired");
 
     loop {
         asm::wfi();
     }
-
 }

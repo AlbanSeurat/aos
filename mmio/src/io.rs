@@ -16,6 +16,10 @@ pub trait Writer {
     fn write_short(&mut self, short: u16) -> IoResult<usize> {
         self.write(&short.to_be_bytes())
     }
+
+    fn write_dword(&mut self, dword: u32) -> IoResult<usize> {
+        self.write(&dword.to_be_bytes())
+    }
 }
 
 pub trait Reader {
@@ -30,5 +34,11 @@ pub trait Reader {
         let mut short = 0u16.to_be_bytes();
         self.read(&mut short)?;
         Ok(BigEndian::read_u16(&short))
+    }
+
+    fn read_dword(&mut self) -> IoResult<u32> {
+        let mut dword = 0u32.to_be_bytes();
+        self.read(&mut dword)?;
+        Ok(BigEndian::read_u32(&dword))
     }
 }

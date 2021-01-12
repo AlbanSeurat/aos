@@ -27,7 +27,7 @@ pub(crate) unsafe fn syscalls(e : &ExceptionContext) -> u64 {
         1 => syscall_print(e.gpr.x[0] as *const u8, e.gpr.x[1] as usize),
         2 => syscall_pause(e.gpr.x[0] as u64),
         3 => { syscall_halt(); u64::MAX },
-        4 => syscall_open_handle(e.gpr.x[0], e.gpr.x[1] as *const u8),
+        4 => syscall_open_handle(e.gpr.x[0], e.gpr.x[1] as usize),
         _ => u64::MAX
     }
 }
@@ -49,11 +49,7 @@ unsafe fn syscall_halt() {
     QEMU_EXIT_HANDLE.exit_success();
 }
 
-unsafe fn syscall_open_handle(handle_type: u64, _c_string: * const u8) -> u64 {
+unsafe fn syscall_open_handle(handle_type: u64, handle: usize) -> u64 {
     let mut process : &mut Process = core::mem::transmute(memory::map::physical::PROG_META_START);
-    let mut result : u64 = u64::MAX;
-    let fd = process.open_handle(FromPrimitive::from_u64(handle_type).unwrap());
-    debugln!("opening handle for '{}' of type {} => index {}", process.name, handle_type, fd);
-    llvm_asm!("mov x1, $0" :: "r"(1024));
-    fd as u64
+    process.open_handle(FromPrimitive::from_u64(handle_type).unwrap(), handle) as u64
 }

@@ -1,6 +1,8 @@
 use crate::io::{Writer, IoResult};
 use crate::HandleType;
 use num_traits::ToPrimitive;
+use crate::process::handle::TimerHandle;
+use crate::process::handle::HandleType::TIMER;
 
 pub struct SysCall {
 
@@ -35,14 +37,19 @@ impl SysCall {
         }
     }
 
-    pub fn open(&self, handle_type: HandleType) -> u64 {
+    fn open(&self, handle_type: HandleType, handle: usize) -> u64 {
         let mut result = u64::MAX;
         let t = ToPrimitive::to_usize(&handle_type).unwrap();
         unsafe {
             llvm_asm!("mov x0, $0" :: "r"(t));
+            llvm_asm!("mov x1, $0" :: "r"(handle));
             llvm_asm!("SVC 4");
             llvm_asm!("mov $0, x0" : "=r"(result));
         }
         result
+    }
+
+    pub fn create_timer(&self, timer: &TimerHandle) -> u64 {
+        self.open(TIMER, timer as * const _ as usize)
     }
 }

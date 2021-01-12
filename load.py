@@ -26,8 +26,8 @@ def create_serial() :
    ser.open()
    return ser
 
-def read_short(ser):
-   return int.from_bytes(ser.read(2), byteorder='big', signed=False)
+def read_dword(ser):
+   return int.from_bytes(ser.read(4), byteorder='big', signed=False)
 
 def read_kernel():
    f = open(kernel_img, "rb")
@@ -40,10 +40,10 @@ ack(s)
 
 kernel_size = os.path.getsize(kernel_img)
 print(f"write {kernel_size:d}")
-s.write(kernel_size.to_bytes(2, byteorder='big'))
+s.write(kernel_size.to_bytes(4, byteorder='big'))
 ack(s)
 
-print(f"kernel size received {read_short(s):d}")
+print(f"kernel size received {read_dword(s):d}")
 ack(s)
 
 print("send kernel")

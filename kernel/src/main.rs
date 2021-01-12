@@ -4,16 +4,19 @@
 #![feature(core_intrinsics)]
 #![feature(global_asm)]
 #![feature(duration_constants)]
+#![feature(alloc_error_handler)]
 #![feature(llvm_asm)]
 
+#[macro_use] extern crate alloc;
 #[macro_use] extern crate mmio;
 use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
 use cortex_a::regs::{SP_EL0, ELR_EL1, SPSR_EL1, RegisterReadWrite};
 use cortex_a::asm;
 use shared::memory::mmu::VIRTUAL_ADDR_START;
-use mmio::{BCMDeviceMemory, Uart, DMA};
-use crate::global::{UART, BCMDEVICES};
+use mmio::{BCMDeviceMemory, Uart, DMA, HEAP};
+use crate::global::{UART, BCMDEVICES, TIMER};
 use crate::process::k_create_process;
+use alloc::vec::Vec;
 
 mod memory;
 mod exceptions;
@@ -36,20 +39,34 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
         Err(err) => panic!("setup mmu failed : {}", err),
         _ => {}
     }
-    DMA.set(mmio::MemoryRegion::new(memory::map::physical::MMA_MEMORY_START, memory::map::physical::MMA_MEMORY_END));
+    exceptions::init();
+    unsafe {
+        DMA.lock().init(memory::map::physical::MMA_MEMORY_START,
+                        memory::map::physical::MMA_MEMORY_END - memory::map::physical::MMA_MEMORY_START);
+    }
     let v_mbox = mmio::Mbox::new_with_dma(memory::map::virt::MBOX_BASE);
     mmio::LOGGER.appender(UART.into());
-    mmio::SCREEN.appender(UART.into());
-    exceptions::init();
     let mut console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
     mmio::SCREEN.appender( console.into());
 
     unsafe { print!("MMU Kernel mapping : \n{}", shared::memory::mmu::kernel_tables()); }
     unsafe { print!("MMU Program mapping : \n{}", shared::memory::mmu::user_tables()); }
 
+    unsafe {
+        HEAP.lock().init(memory::map::virt::KERNEL_HEAP_START,
+                         memory::map::virt::KERNEL_HEAP_END - memory::map::virt::KERNEL_HEAP_START);
+    }
+
     // setup IRQs
     //UART.enable_rx_irq(&irq, &bcm);
-    mmio::timer::LocalTimer::setup(&BCMDEVICES);
+    //TIMER.setup(&BCMDEVICES);
+
+    let mut v: Vec<i32> = Vec::new();
+    v.push(3);
+    let value = v.get_unchecked(0);
+    println!("value addr : {:x}", &value as * const _ as usize);
+
+    // println!("{} ", v.len());
 
     k_create_process()
 }

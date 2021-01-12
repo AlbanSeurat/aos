@@ -74,9 +74,9 @@ unsafe fn load_kernel(uart: &mut Uart) -> IoResult<()> {
     debugln!("load kernel");
     uart.clear()?;
     uart.writes("\x03\x03\x03")?;
-    let len = uart.read_short()?;
+    let len = uart.read_dword()?;
     uart.writes("\x03\x03\x03")?;
-    uart.write_short(len);
+    uart.write_dword(len);
     uart.writes("\x03\x03\x03")?;
     let kernel_addr: *mut u8 = memory::map::physical::KERN_START as *mut u8;
     unsafe {

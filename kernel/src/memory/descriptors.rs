@@ -5,7 +5,7 @@ use shared::memory::mapping::{Translation, Mapping, MemAttributes,
 /// A virtual memory layout that is agnostic of the paging granularity that the
 /// hardware MMU will use.
 ///
-pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
+pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
     //Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_STACK_START - 1),
@@ -15,6 +15,18 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 4] = [
                 mem_attributes: MemAttributes::CacheableDRAM,
                 acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: false,
+            },
+        },
+    },
+    //Stack Heap
+    Descriptor {
+        virtual_range: || RangeInclusive::new(super::map::physical::KERNEL_HEAP_START, super::map::physical::KERNEL_HEAP_END),
+        map : Mapping {
+            translation: Translation::Identity,
+            attribute_fields: AttributeFields {
+                mem_attributes: MemAttributes::CacheableDRAM,
+                acc_perms: AccessPermissions::ReadWriteKernel,
+                execute_never: true,
             },
         },
     },

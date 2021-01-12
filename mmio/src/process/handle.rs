@@ -1,5 +1,4 @@
 
-
 #[derive(Copy, Clone)]
 #[derive(PartialEq, Eq)]
 #[derive(FromPrimitive, ToPrimitive)]
@@ -16,3 +15,17 @@ pub struct Handle {
     pub handle_type: HandleType,
 }
 
+pub struct TimerHandle {
+    handler: extern "C" fn() -> !,
+    period: usize // in second
+}
+
+impl TimerHandle {
+
+    pub fn new(handler : extern "C" fn() -> !, period : usize) -> Self {
+        TimerHandle {
+            handler,
+            period
+        }
+    }
+}

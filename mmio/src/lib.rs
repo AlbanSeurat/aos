@@ -35,9 +35,12 @@ pub use timer::LocalTimer;
 pub use irq::IRQ;
 pub use bcm::BCMDeviceMemory;
 pub use console::FrameBufferConsole;
-pub use dma::MemoryRegion;
-pub use process::handle::{Handle, HandleType};
+pub use process::handle::{Handle, HandleType, TimerHandle};
+use linked_list_allocator::LockedHeap;
 
 pub static mut LOGGER: Logger = Logger::new();
 pub static mut SCREEN: Logger = Logger::new();
-pub static mut DMA : dma::DMAMemory = dma::DMAMemory::new();
+pub static DMA: LockedHeap = LockedHeap::empty();
+
+#[global_allocator]
+pub static HEAP: LockedHeap = LockedHeap::empty();

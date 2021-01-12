@@ -3,21 +3,40 @@ use cortex_a::regs::{SP_EL0, RegisterReadWrite, ELR_EL1, SPSR_EL1};
 use cortex_a::asm;
 use core::intrinsics::size_of;
 use mmio::{Handle, HandleType};
+use crate::global::TIMER;
+use shared::exceptions::handlers::GPR;
+
+#[repr(C)]
+pub struct ProcessContext {
+    pub regs: GPR,
+    pub state: usize,
+    pub ttbr0: usize,
+}
+
+impl ProcessContext {
+    pub fn new(regs: GPR, state: usize, ttbr0: usize) -> Self {
+        return ProcessContext {
+            regs,
+            state,
+            ttbr0,
+        }
+    }
+}
 
 pub struct Process {
-    pub name: &'static str,
-    handles: [Handle; 1024]
+    pid: usize,
+    handles: [Handle; 1024],
 }
 
 impl Process {
-    pub fn new(name: &'static str) -> Self {
+    pub fn new(pid: usize) -> Self {
         Process {
-            name,
+            pid,
             handles: [Handle { handle_type : HandleType::NONE}; 1024],
         }
     }
 
-    pub fn open_handle(&mut self, handle_type: HandleType) -> usize {
+    pub fn open_handle(&mut self, handle_type: HandleType, pointer: usize) -> usize {
         let (pos, handle) = self.handles.iter_mut().enumerate()
             .find( | (s, h)| h.handle_type == HandleType::NONE).unwrap();
         handle.handle_type = handle_type;
@@ -31,15 +50,13 @@ impl Process {
 
 }
 
-
 pub(crate) fn k_create_process() -> ! {
 
-    let process = Process::new("program");
-
+    let process = Process::new(1);
     let bytes = include_bytes!("../../program.img");
-    println!("copying program from {:p} to {:#x} with len {}", bytes as *const u8, memory::map::physical::PROG_START, bytes.len());
     unsafe { core::ptr::copy(bytes as *const u8, memory::map::physical::PROG_START as *mut u8, bytes.len()) };
-    unsafe { core::ptr::copy( &process as *const _ as * const u8, memory::map::physical::PROG_META_START as *mut u8, core::mem::size_of::<Process>())};
+    unsafe { core::ptr::copy( &process as *const _ as * const u8,
+                              memory::map::physical::PROG_META_START as *mut u8, core::mem::size_of::<Process>())};
 
     println!("JUMP to program at {:x}", memory::map::physical::PROG_START as u64);
     SP_EL0.set(0x0040_0000);

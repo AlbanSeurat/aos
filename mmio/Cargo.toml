@@ -13,4 +13,5 @@ cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "master" 
 register = "0.5.1"
 font8x8 = { version = "0.2.7", default-features = false, features = ["unicode"] }
 num-derive = "0.3.3"
+linked_list_allocator = "0.8.11"
 num-traits = { version = "0.2.14", default-features = false }

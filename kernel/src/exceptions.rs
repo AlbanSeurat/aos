@@ -1,5 +1,6 @@
 
 mod syscalls;
+mod interruptions;
 
 use shared::exceptions::handlers::ExceptionContext;
 use cortex_a::regs::{ESR_EL1, FAR_EL1, SPSR_EL1, CurrentEL, RegisterReadOnly, RegisterReadWrite};
@@ -9,6 +10,8 @@ use mmio::{LocalTimer, BCMDeviceMemory};
 use crate::{memory, BCMDEVICES, UART};
 use mmio::logger::Output::Uart;
 use mmio::io::Reader;
+use crate::global::TIMER;
+use crate::exceptions::interruptions::irq_handler;
 
 extern "C" {
     static __exception_vectors_start: u64;
@@ -51,26 +54,12 @@ unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) -> u64 {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) -> u64 {
-    let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
-    println!("Lower aarch64 IRQ handling : source {:x}", source);
-    match source {
-        0x800 => LocalTimer::reset(&BCMDEVICES),
-        0x100 => syscalls::reset(),
-        _ => debug_halt("current_elx_irq", e)
-    };
-    u64::MAX
+    irq_handler(e)
 }
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) -> u64 {
-    let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();
-    println!("Lower aarch64 IRQ handling : source {:x}", source);
-    match source {
-        0x800 => LocalTimer::reset(&BCMDEVICES),
-        0x100 => syscalls::reset(),
-        _ => debug_halt("lower_aarch64_irq", e)
-    };
-    u64::MAX
+    irq_handler(e)
 }
 
 fn debug_halt(string: &'static str, e: &ExceptionContext) {

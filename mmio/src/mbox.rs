@@ -28,6 +28,7 @@ use register::{
     register_bitfields,
 };
 use crate::{debugln, debug, DMA, mbox};
+use crate::dma::SliceAllocator;
 use core::ptr::null;
 
 register_bitfields! {
@@ -42,10 +43,14 @@ register_bitfields! {
 #[allow(non_snake_case)]
 #[repr(C)]
 pub struct RegisterBlock {
-    READ: ReadOnly<u32>,                     // 0x00
-    __reserved_0: [u32; 5],                  // 0x04
-    STATUS: ReadOnly<u32, STATUS::Register>, // 0x18
-    __reserved_1: u32,                       // 0x1C
+    READ: ReadOnly<u32>,
+    // 0x00
+    __reserved_0: [u32; 5],
+    // 0x04
+    STATUS: ReadOnly<u32, STATUS::Register>,
+    // 0x18
+    __reserved_1: u32,
+    // 0x1C
     WRITE: WriteOnly<u32>,                   // 0x20
 }
 
@@ -67,8 +72,8 @@ pub mod tag {
     pub const GETSERIAL: u32 = 0x10004;
     pub const SETCLKRATE: u32 = 0x38002;
 
-    pub const GET_SCREEN_FRAME_BUFFER : u32 = 0x40001;
-    pub const GET_PITCH : u32 = 0x40008;
+    pub const GET_SCREEN_FRAME_BUFFER: u32 = 0x40001;
+    pub const GET_PITCH: u32 = 0x40008;
     pub const GET_SCREEN_VIRTUAL_OFFSET: u32 = 0x40009;
 
     pub const SCREEN_PHY_RES: u32 = 0x48003;
@@ -101,7 +106,7 @@ pub const REQUEST: u32 = 0;
 pub struct Mbox<'a> {
     // The address for buffer needs to be 16-byte aligned so that the
     // Videcore can handle it properly.
-    pub dma: &'a mut[u32],
+    pub dma: &'a mut [u32],
     pub stack: [u32; 36],
     pub base_addr: usize,
     pub is_dma: bool,
@@ -117,14 +122,13 @@ impl<'a> ops::Deref for Mbox<'a> {
 }
 
 impl<'a> Mbox<'a> {
-
     pub fn new(base_addr: usize) -> Mbox<'a> {
-        Mbox { dma: &mut [], stack: [0; 36], base_addr , is_dma : false, pos: 2 }
+        Mbox { dma: &mut [], stack: [0; 36], base_addr, is_dma: false, pos: 2 }
     }
 
     pub fn new_with_dma(base_addr: usize) -> Mbox<'a> {
         let ptr: &mut [u32] = unsafe { DMA.alloc_slice_zeroed(36, mem::align_of::<u32>()).unwrap() };
-        Mbox { dma: ptr, stack: [0; 36], base_addr , is_dma : true, pos : 2 }
+        Mbox { dma: ptr, stack: [0; 36], base_addr, is_dma: true, pos: 2 }
     }
 
     pub fn prepare(&mut self, request: u32, total_size: u32, request_size: u32, params: &[u32]) {
@@ -132,7 +136,7 @@ impl<'a> Mbox<'a> {
         self.set_and_inc(total_size);
         self.set_and_inc(request_size);
 
-        for pos  in 0..total_size / 4 {
+        for pos in 0..total_size / 4 {
             if pos as usize >= params.len() {
                 self.set_and_inc(0)
             } else {
@@ -150,7 +154,7 @@ impl<'a> Mbox<'a> {
 
     pub fn request(&mut self, channel: u32) -> Result<(), MboxError> {
         // set the last "command"
-        self.set_and_inc( mbox::tag::LAST);
+        self.set_and_inc(mbox::tag::LAST);
         self.set_at_pos((self.pos * 4) as u32, 0);
         self.set_at_pos(mbox::REQUEST, 1);
         self.call(if self.is_dma { self.dma } else { &self.stack }, channel)
@@ -187,14 +191,9 @@ impl<'a> Mbox<'a> {
                 // is it a valid successful response?
                 return match buffer[1] {
                     response::SUCCESS => Ok(()),
-                    response::ERROR => {
-                        debugln!("Erreur, buffer : {:x?}", buffer);
-                        Err(MboxError::ResponseError)
-                    },
-                    _ => {
-                        debugln!("Erreur, buffer : {:x?}", buffer);
-                        Err(MboxError::UnknownError)
-                    },
+                    response::ERROR => Err(MboxError::ResponseError),
+                    _ => Err(MboxError::UnknownError)
+                    ,
                 };
             }
         }
