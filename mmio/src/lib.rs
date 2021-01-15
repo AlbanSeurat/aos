@@ -23,7 +23,6 @@ pub mod macros;
 mod bcm;
 mod console;
 mod dma;
-mod process;
 
 pub use gpio::GPIO;
 pub use mbox::Mbox;
@@ -35,7 +34,6 @@ pub use timer::LocalTimer;
 pub use irq::IRQ;
 pub use bcm::BCMDeviceMemory;
 pub use console::FrameBufferConsole;
-pub use process::handle::{Handle, HandleType, TimerHandle};
 use linked_list_allocator::LockedHeap;
 
 pub static mut LOGGER: Logger = Logger::new();

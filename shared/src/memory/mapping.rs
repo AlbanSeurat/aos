@@ -44,7 +44,7 @@ pub struct Mapping {
     pub attribute_fields: AttributeFields,
 }
 
-#[derive(Debug)]
+#[derive(Copy, Clone, Debug)]
 pub struct Descriptor {
     pub virtual_range: fn() -> RangeInclusive<usize>,
     pub map : Mapping,

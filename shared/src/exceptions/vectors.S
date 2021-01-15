@@ -25,7 +25,7 @@
 .macro SAVE_CONTEXT_CALL_HANDLER_AND_RESTORE handler
 .balign 0x80
 
-    sub    sp,  sp,  #16 * 17
+    sub    sp,  sp,  #16 * 18
 
     stp    x0,  x1,  [sp, #16 * 0]
     stp    x2,  x3,  [sp, #16 * 1]
@@ -45,9 +45,10 @@
 
     mrs    x1,  SPSR_EL1
     mrs    x2,  ELR_EL1
+    mrs    x3,  SP_EL0
 
     stp    x30, x1,  [sp, #16 * 15]
-    str    x2,       [sp, #16 * 16]
+    stp    x2,  x3,  [sp, #16 * 16]
 
     mov    x0,  sp
     bl     \handler
@@ -69,11 +70,7 @@ __restore_context:
     msr    ELR_EL1, x19
     msr    SPSR_EL1, x20
 
-    cmp    x0, #-1
-    b.ne   skip
-    ldr    x0,  [sp]
-    skip:
-    ldr    x1,  [sp, #8]
+    ldp    x0,  x1,  [sp, #16 * 0]
     ldp    x2,  x3,  [sp, #16 * 1]
     ldp    x4,  x5,  [sp, #16 * 2]
     ldp    x6,  x7,  [sp, #16 * 3]
@@ -89,7 +86,7 @@ __restore_context:
     ldp    x26, x27, [sp, #16 * 13]
     ldp    x28, x29, [sp, #16 * 14]
 
-    add    sp,  sp,  #16 * 17
+    add    sp,  sp,  #16 * 18
 
     eret
 

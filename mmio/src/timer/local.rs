@@ -1,8 +1,8 @@
 use crate::bcm::{DeviceMemoryBlock, LOCAL_TIMER_CONTROL_STATUS, LOCAL_TIMER_IRQ_CLEAN_RELOAD};
 use core::convert::TryInto;
-use crate::{Handle, TimerHandle};
 
-const RESET_VALUE: u32 = 38_461_538;
+//const RESET_VALUE: u32 = 38_461_538;
+const RESET_VALUE: u32 =  461_538;
 
 pub struct LocalTimer {
     tick : u128,

@@ -54,3 +54,18 @@ https://github.com/raspberrypi/firmware/tree/master/boot
 Schematics with my USB-to-serial 
 
 
+## Troubleshooting 
+
+#### Exception Handling 
+
+Reference : SysReg_xml_v85A-2019-06.pdf (page 418)
+
+ESR_ELx : Register holding exception information : 
+
+EC : Exception Class 
+
+
+#### Disassembling 
+
+```aarch64-none-elf-objdump -b binary -maarch64 -D program.img```
+

@@ -8,12 +8,6 @@ pub mod map {
     pub const END:                     usize =             0xFFFF_FFFF;
 
     pub mod physical {
-        pub const PROG_START:          usize =             0x0020_0000;
-        pub const PROG_END:            usize =             0x0040_0000;
-
-        pub const PROG_META_START:     usize =             0x0040_0000;
-        pub const PROG_META_END:       usize =             0x0060_0000;
-
         pub const KERNEL_HEAP_START:   usize =             0x3500_0000;
         pub const KERNEL_HEAP_END:     usize =             0x36FF_FFFF;
 

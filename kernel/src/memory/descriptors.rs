@@ -67,7 +67,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
     }
 ];
 
-pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 4] = [
+pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 2] = [
     // MMA memory
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::MMA_MEMORY_START, super::map::physical::MMA_MEMORY_END),
@@ -91,7 +91,7 @@ pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 4] = [
                 execute_never: true,
             }
         },
-    },
+    }/*,
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::PROG_START, super::map::physical::PROG_END - 1),
         map : Mapping {
@@ -102,16 +102,5 @@ pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 4] = [
                 execute_never: false,
             },
         },
-    },
-    Descriptor {
-        virtual_range: || RangeInclusive::new(super::map::physical::PROG_META_START, super::map::physical::PROG_META_END - 1),
-        map : Mapping {
-            translation: Translation::Offset(0x100_0000),
-            attribute_fields: AttributeFields {
-                mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWriteKernel,
-                execute_never: true,
-            },
-        },
-    }
+    }*/
 ];

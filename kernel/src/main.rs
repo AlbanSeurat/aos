@@ -9,19 +9,23 @@
 
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate mmio;
-use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
-use cortex_a::regs::{SP_EL0, ELR_EL1, SPSR_EL1, RegisterReadWrite};
-use cortex_a::asm;
-use shared::memory::mmu::VIRTUAL_ADDR_START;
-use mmio::{BCMDeviceMemory, Uart, DMA, HEAP};
-use crate::global::{UART, BCMDEVICES, TIMER};
-use crate::process::k_create_process;
+
 use alloc::vec::Vec;
+
+use cortex_a::asm;
+use cortex_a::regs::{ELR_EL1, RegisterReadWrite, SP_EL0, SPSR_EL1};
+
+use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
+use mmio::{BCMDeviceMemory, DMA, HEAP, Uart};
+use shared::memory::mmu::VIRTUAL_ADDR_START;
+
+use crate::global::{BCMDEVICES, TIMER, UART};
+use crate::scheduler::process::{create_init_program, create_tmp_init_program};
 
 mod memory;
 mod exceptions;
 mod global;
-mod process;
+mod scheduler;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -59,16 +63,18 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 
     // setup IRQs
     //UART.enable_rx_irq(&irq, &bcm);
-    //TIMER.setup(&BCMDEVICES);
+    TIMER.setup(&BCMDEVICES);
 
-    let mut v: Vec<i32> = Vec::new();
-    v.push(3);
-    let value = v.get_unchecked(0);
-    println!("value addr : {:x}", &value as * const _ as usize);
+    create_tmp_init_program();
+    create_tmp_init_program();
+    create_tmp_init_program();
+    create_tmp_init_program();
+    create_tmp_init_program();
+    create_init_program();
 
-    // println!("{} ", v.len());
-
-    k_create_process()
+    loop {
+        asm::wfi();
+    }
 }
 
 fn setup_mmu() -> Result<(), &'static str> {

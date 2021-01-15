@@ -79,11 +79,9 @@ unsafe fn load_kernel(uart: &mut Uart) -> IoResult<()> {
     uart.write_dword(len);
     uart.writes("\x03\x03\x03")?;
     let kernel_addr: *mut u8 = memory::map::physical::KERN_START as *mut u8;
-    unsafe {
-        // Read the kernel byte by byte.
-        for i in 0..len {
-            core::ptr::write_volatile(kernel_addr.offset(i as isize), uart.read_char()?);
-        }
+    // Read the kernel byte by byte.
+    for i in 0..len {
+        core::ptr::write_volatile(kernel_addr.offset(i as isize), uart.read_char()?);
     }
     uart.writes("\x03\x03\x03")?;
     Ok(())

@@ -10,7 +10,6 @@
 use cortex_a::asm;
 use mmio::syscall::SysCall;
 use qemu_exit::QEMUExit;
-use mmio::{HandleType, TimerHandle};
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -34,11 +33,11 @@ pub unsafe extern "C" fn _main() -> () {
     mmio::SCREEN.appender(SysCall { }.into());
 
     println!("show a message using SVC call");
-    let mut count = 0;
+    let mut count:u128 = 0;
     loop {
-        let syscall = SysCall { };
-        syscall.sleep(1);
-        println!("Count every seconds {}", count);
+        if count % 1000000 == 0 {
+            println!("Count every seconds {}", count);
+        }
         count = count + 1;
     }
 

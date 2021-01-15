@@ -27,38 +27,35 @@ pub unsafe fn init() {
 /// The default exceptions, invoked for every exceptions type unless the handler
 /// is overwritten.
 #[no_mangle]
-unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) -> u64 {
+unsafe extern "C" fn default_exception_handler(e: &ExceptionContext)  {
     debug_halt("default_exception_handler", e);
-    u64::MAX
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) -> u64 {
+unsafe extern "C" fn current_elx_synchronous(e: &ExceptionContext) {
     if ESR_EL1.read(ESR_EL1::EC) == 0x15 { // SVC call
         syscalls::syscalls(e)
     } else {
         debug_halt("current_elx_synchronous", e);
-        u64::MAX
     }
 }
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) -> u64 {
+unsafe extern "C" fn lower_aarch64_synchronous(e : &ExceptionContext) {
     if ESR_EL1.read(ESR_EL1::EC) == 0x15 { // SVC call
         syscalls::syscalls(e)
     } else {
         debug_halt("lower_aarch64_synchronous", e);
-        u64::MAX
     }
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) -> u64 {
+unsafe extern "C" fn current_elx_irq(e: &ExceptionContext) {
     irq_handler(e)
 }
 
 #[no_mangle]
-unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext) -> u64 {
+unsafe extern "C" fn lower_aarch64_irq(e: &ExceptionContext)  {
     irq_handler(e)
 }
 

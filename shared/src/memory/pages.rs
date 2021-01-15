@@ -5,6 +5,7 @@ use crate::memory::mmu::VIRTUAL_ADDR_START;
 use core::fmt::{Display, Formatter};
 use core::fmt;
 use itertools::Itertools;
+use core::slice::Iter;
 
 trait BaseAddr {
     fn phys_base_addr(&self) -> usize;
@@ -83,14 +84,14 @@ impl<const NUM_TABLES: usize> FixedSizeTranslationTable<{ NUM_TABLES }> {
         return self.lvl2.phys_base_addr();
     }
 
-    pub fn map_descriptors(&mut self, descriptors: &[Descriptor]) -> Result<(), &'static str> {
+    pub fn map_descriptors(&mut self, descriptors: &Iter<Descriptor>) -> Result<(), &'static str> {
 
         // Populate the l2 entries.
         for (lvl2_nr, lvl2_entry) in self.lvl2.iter_mut().enumerate() {
             *lvl2_entry = self.lvl3[lvl2_nr].phys_base_addr().into();
         }
 
-        for desc in descriptors.iter() {
+        for desc in descriptors.as_slice() {
             let range = (desc.virtual_range)();
             unsafe {
                 self.map_pages_at(range, &desc.map.translation, &desc.map.attribute_fields)?;
