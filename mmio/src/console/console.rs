@@ -30,7 +30,6 @@ impl UnicodeConsole for FrameBufferConsole {
         let x  = pos.col.0 as u32 * 8;
         let y =  (pos.row.0 as u32 + self.inc) * 8;
 
-        // [x + y * (doubleFb.pitch >> 2)]
         if let Some(glyph) = BASIC_FONTS.get(ch) {
             for (yy, g) in glyph.iter().enumerate() {
                 for xx  in 0..8 {

@@ -8,7 +8,6 @@ use cortex_a::regs::{ELR_EL1, RegisterReadWrite, SP_EL0, SPSR_EL1, TTBR0_EL1, EL
 
 use shared::exceptions::handlers::GPR;
 
-use crate::global::{SCHEDULER, TIMER};
 use crate::memory;
 use shared::memory::mmu::{ArchTranslationTable, setup_dyn_user_tables, switch_user_tables};
 use shared::memory::mapping::Descriptor;
@@ -16,6 +15,7 @@ use crate::scheduler::PROG_START;
 use crate::scheduler::process::ProcessState::{Sleep, Running};
 use core::cell::Cell;
 use cortex_a::asm::eret;
+use crate::global::{SCHEDULER, BCMDEVICES, TIMER};
 
 extern "C" {
     #[inline]

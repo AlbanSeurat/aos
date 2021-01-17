@@ -4,9 +4,10 @@ use process::Process;
 use crate::memory::descriptors::PROGRAM_VIRTUAL_LAYOUT;
 use shared::memory::mapping::{Descriptor, Mapping, Translation, AttributeFields, MemAttributes, AccessPermissions};
 use core::ops::RangeInclusive;
-use crate::global::{TIMER, BCMDEVICES};
 use shared::exceptions::handlers::ExceptionContext;
 use crate::scheduler::process::ProcessState::Running;
+use mmio::PhysicalTimer;
+use crate::global::TIMER;
 
 pub mod process;
 
@@ -47,8 +48,7 @@ impl Scheduler {
     }
 
     pub unsafe fn schedule(&mut self, e: &ExceptionContext) {
-        TIMER.irq_handle(&BCMDEVICES);
-
+        TIMER.reset_counter();
         let (pos, process) = self.processes.iter_mut()
             .enumerate().find( | (pos, p)| p.is_running())
             .expect("At least on process must run");
@@ -58,7 +58,6 @@ impl Scheduler {
         let mut restaured = self.processes
             .get_mut( if pos == nb_processes - 1 { 0 } else { pos + 1} )
             .expect("At least on process should have be created");
-
         restaured.restore()
     }
 }

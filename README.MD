@@ -60,12 +60,21 @@ Schematics with my USB-to-serial
 
 Reference : SysReg_xml_v85A-2019-06.pdf (page 418)
 
+ELR : The execption returns (where the exception occured if data fault or synchronous)
 ESR_ELx : Register holding exception information : 
 
 EC : Exception Class 
 
 
+
+
 #### Disassembling 
 
+- Disassemble stripped version 
+
 ```aarch64-none-elf-objdump -b binary -maarch64 -D program.img```
+
+- Disassemble  version with symbol
+
+aarch64-none-elf-objdump -g -D target/aarch64-unknown-none/release/aos-kernel
 

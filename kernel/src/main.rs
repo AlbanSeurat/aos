@@ -16,11 +16,12 @@ use cortex_a::asm;
 use cortex_a::regs::{ELR_EL1, RegisterReadWrite, SP_EL0, SPSR_EL1};
 
 use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
-use mmio::{BCMDeviceMemory, DMA, HEAP, Uart};
+use mmio::{BCMDeviceMemory, DMA, HEAP, Uart, PhysicalTimer, IRQ};
 use shared::memory::mmu::VIRTUAL_ADDR_START;
 
-use crate::global::{BCMDEVICES, TIMER, UART};
+use crate::global::{BCMDEVICES, UART, TIMER};
 use crate::scheduler::process::{create_init_program, create_tmp_init_program};
+use core::time::Duration;
 
 mod memory;
 mod exceptions;
@@ -63,13 +64,15 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
 
     // setup IRQs
     //UART.enable_rx_irq(&irq, &bcm);
-    TIMER.setup(&BCMDEVICES);
 
     create_tmp_init_program();
     create_tmp_init_program();
     create_tmp_init_program();
     create_tmp_init_program();
     create_tmp_init_program();
+
+    TIMER.setup(&BCMDEVICES);
+
     create_init_program();
 
     loop {

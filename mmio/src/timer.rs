@@ -1,6 +1,4 @@
-mod local;
-mod virt;
+mod physical;
 
-pub use virt::VirtualTimer;
-pub use local::LocalTimer;
+pub use physical::PhysicalTimer;
 
