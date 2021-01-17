@@ -3,6 +3,7 @@ use font8x8::{BASIC_FONTS, UnicodeFonts};
 use crate::console::fb::FrameBuffer;
 use crate::mbox;
 use crate::io::{Writer, IoResult};
+use crate::{debugln, debug};
 
 pub struct FrameBufferConsole {
     lfb: FrameBuffer,
@@ -93,12 +94,8 @@ impl BaseConsole for FrameBufferConsole {
     }
 
     fn scroll_screen(&mut self) -> Result<(), Self::Error> {
-        self.inc = self.inc + 1;
-        if self.inc >= self.get_height().0 as u32 {
-            self.lfb.flip();
-            self.inc = 0;
-        }
-        self.lfb.scroll_down(&mut self.v_mbox, self.inc as u32).map_err(|_| "scroll failed")
+        self.lfb.scroll();
+        Ok(())
     }
 }
 

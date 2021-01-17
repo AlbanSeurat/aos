@@ -72,6 +72,7 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
     create_tmp_init_program();
 
     TIMER.setup(&BCMDEVICES);
+    unsafe { IRQ::enable(); }
 
     create_init_program();
 

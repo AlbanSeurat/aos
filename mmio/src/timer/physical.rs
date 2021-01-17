@@ -18,7 +18,6 @@ impl PhysicalTimer {
     }
 
     pub fn setup(&self, device: &DeviceMemoryBlock) {
-        unsafe { IRQ::enable(); }
         device.CORE0_TIMER_IRQCNTL.set(1 << 1); // activate IRQ for local timer in the IRQ table
         CNTP_TVAL_EL0.set(PhysicalTimer::duration(self.inc) as u64);
         CNTP_CTL_EL0.modify(CNTP_CTL_EL0::ENABLE::SET + CNTP_CTL_EL0::IMASK::CLEAR);
