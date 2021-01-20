@@ -1,14 +1,14 @@
-use mmio::{BCMDeviceMemory, Uart, DWHCI, PhysicalTimer};
+use mmio::{BCMDeviceMemory, Uart, PhysicalTimer, USB};
 use crate::memory;
 use qemu_exit::QEMUExit;
 use crate::scheduler::Scheduler;
 use core::time::Duration;
 
 pub const BCMDEVICES: BCMDeviceMemory = BCMDeviceMemory::new(memory::map::virt::peripheral::START);
-pub const DWHCI: DWHCI = mmio::DWHCI::new(memory::map::virt::USB_BASE);
+pub const USB: USB = mmio::USB::new(memory::map::virt::USB_BASE);
 pub const IRQ: mmio::IRQ = mmio::IRQ::new(memory::map::virt::IRQ_BASE);
 pub const UART: Uart = mmio::Uart::new(memory::map::virt::UART_BASE);
-pub const TIMER: PhysicalTimer = PhysicalTimer::new(Duration::from_millis(100));
+pub const TIMER: PhysicalTimer = PhysicalTimer::new(Duration::from_millis(10));
 pub static mut SCHEDULER: Scheduler = Scheduler::new();
 
 #[panic_handler]

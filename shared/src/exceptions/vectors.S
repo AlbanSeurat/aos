@@ -51,6 +51,10 @@
     stp    x2,  x3,  [sp, #16 * 16]
 
     mov    x0,  sp
+    add    x0,  x0,  #16 * 18
+    str    x0,       [sp, #16 * 17]
+    mov    x0,  sp
+
     bl     \handler
     b      __restore_context
 .endm

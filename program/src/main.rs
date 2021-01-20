@@ -35,8 +35,12 @@ pub unsafe extern "C" fn _main() -> () {
     println!("show a message using SVC call");
     let mut count:u128 = 0;
     loop {
-        if count % 1000000 == 0 {
-            println!("Count every seconds {}", count);
+        if count % 10000 == 0 {
+            format_args!("Count every seconds {}", count);
+            //println!("show string from time to time {}", count);
+        }
+        if count % 100000000000 == 0 {
+            println!("show string from time to time {}", count);
         }
         count = count + 1;
     }

@@ -4,7 +4,7 @@ use core::time::Duration;
 use mmio::timer::PhysicalTimer;
 use qemu_exit::QEMUExit;
 use crate::exceptions::{syscalls};
-use cortex_a::regs::{ESR_EL1, RegisterReadWrite, RegisterReadOnly};
+use cortex_a::regs::{ESR_EL1, SP, RegisterReadWrite, RegisterReadOnly};
 use shared::exceptions::handlers::ExceptionContext;
 use crate::global::{UART, BCMDEVICES};
 use mmio::io::Reader;

@@ -4,7 +4,7 @@ use core::borrow::Borrow;
 use core::intrinsics::size_of;
 
 use cortex_a::asm;
-use cortex_a::regs::{ELR_EL1, RegisterReadWrite, SP_EL0, SPSR_EL1, TTBR0_EL1, ELR_EL3};
+use cortex_a::regs::{ELR_EL1, RegisterReadWrite, SP_EL0, SPSR_EL1, TTBR0_EL1, ELR_EL3, SP, SP_EL1};
 
 use shared::exceptions::handlers::GPR;
 
@@ -36,8 +36,8 @@ impl ProcessContext {
             regs,
             state,
             eret_addr,
-            stack
-        }
+            stack,
+        };
     }
 }
 
@@ -47,7 +47,7 @@ impl Default for ProcessContext {
             regs: Default::default(),
             state: 0,
             eret_addr: PROG_START as u64,
-            stack: 0x0040_0000
+            stack: 0x0040_0000,
         }
     }
 }
@@ -55,14 +55,14 @@ impl Default for ProcessContext {
 #[derive(PartialEq)]
 pub enum ProcessState {
     Running,
-    Sleep
+    Sleep,
 }
 
 pub struct Process {
     tlb: ArchTranslationTable,
     pid: u16,
     state: ProcessState,
-    context: ProcessContext
+    context: ProcessContext,
 }
 
 impl Process {
@@ -71,7 +71,7 @@ impl Process {
             tlb: ArchTranslationTable::new(),
             pid,
             state: Sleep,
-            context: Default::default()
+            context: Default::default(),
         }
     }
 
@@ -101,12 +101,13 @@ impl Process {
         self.context = ProcessContext::new(*gpr, state, eret_addr, stack);
     }
 
-    pub fn restore(&mut self) {
+    pub fn restore(&mut self, stack: u64) {
         self.state = Running;
         switch_user_tables(self.tlb.phys_base_addr() as u64);
         SPSR_EL1.set(self.context.state);
         ELR_EL1.set(self.context.eret_addr);
         SP_EL0.set(self.context.stack);
+        SP.set(stack);
         unsafe { __restore_and_eret(self.context.regs.x.as_ptr() as usize) };
     }
 }
@@ -118,9 +119,8 @@ pub(crate) fn create_tmp_init_program() -> () {
 }
 
 pub(crate) fn create_init_program() -> () {
-
     let mut process = unsafe { SCHEDULER.create_process() };
     let bytes = include_bytes!("../../../program.img");
     unsafe { core::ptr::copy(bytes as *const u8, PROG_START as *mut u8, bytes.len()) };
-    process.run();
+    //process.run();
 }

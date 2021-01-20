@@ -106,7 +106,7 @@ fn setup_mmu_tables(apply: impl Fn(u64), tables: &mut ArchTranslationTable, desc
 
 unsafe fn memory_flush() -> Result<(), &'static str> {
     barrier::dsb(barrier::ISHST);
-    llvm_asm!("TLBI VMALLE1");
+    llvm_asm!("TLBI VMALLE1IS");
     barrier::dsb(barrier::ISH);
     barrier::isb(barrier::SY);
     Ok(())

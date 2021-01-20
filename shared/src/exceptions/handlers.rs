@@ -1,9 +1,21 @@
+use core::fmt::{Debug, Formatter};
+use core::fmt;
 global_asm!(include_str!("vectors.S"));
 
 #[repr(C)]
-#[derive(Debug, Default, Clone, Copy)]
+#[derive(Default, Clone, Copy)]
 pub struct GPR {
     pub x: [u64; 31],
+}
+
+impl Debug for GPR {
+
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        for i in 0..self.x.len() {
+            f.write_fmt(format_args!("x{:02}:{:08x}, ", i, self.x[i]));
+        }
+        Ok(())
+    }
 }
 
 #[repr(C)]
@@ -13,6 +25,8 @@ pub struct ExceptionContext {
     pub gpr: GPR,
     pub spsr_el1: u64,
     pub elr_el1: u64,
-    pub stack: u64,
+    pub stack_el0: u64,
+    pub stack_el1: u64,
+
 }
 

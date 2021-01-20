@@ -8,6 +8,7 @@ use shared::exceptions::handlers::ExceptionContext;
 use crate::scheduler::process::ProcessState::Running;
 use mmio::PhysicalTimer;
 use crate::global::TIMER;
+use cortex_a::regs::{CNTV_TVAL_EL0, RegisterReadWrite};
 
 pub mod process;
 
@@ -49,15 +50,14 @@ impl Scheduler {
 
     pub unsafe fn schedule(&mut self, e: &ExceptionContext) {
         TIMER.reset_counter();
-        let (pos, process) = self.processes.iter_mut()
+        let pos = self.processes.iter_mut()
             .enumerate().find( | (pos, p)| p.is_running())
-            .expect("At least on process must run");
-        process.sleep(&e.gpr, e.spsr_el1, e.elr_el1, e.stack);
+            .map_or(0, |( pos , p)|
+                { p.sleep(&e.gpr, e.spsr_el1, e.elr_el1, e.stack_el0); return pos });
 
         let nb_processes = self.processes.len();
-        let mut restaured = self.processes
-            .get_mut( if pos == nb_processes - 1 { 0 } else { pos + 1} )
-            .expect("At least on process should have be created");
-        restaured.restore()
+        let mut restaured = self.processes.get_mut(CNTV_TVAL_EL0.get() as usize % nb_processes)
+            .expect("process not found");
+        restaured.restore(e.stack_el1);
     }
 }
