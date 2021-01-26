@@ -3,6 +3,7 @@ use core::{ptr, mem};
 use crate::{mbox, DMA};
 use crate::{debugln, debug};
 use core::alloc::{Allocator, Layout};
+use cortex_a::asm;
 
 #[derive(Debug)]
 pub struct FrameBufferError {}
@@ -52,9 +53,11 @@ impl FrameBuffer {
     #[inline]
     pub fn scroll(&self) {
         unsafe {
-            let last_line = self.width * self.height / 2;
-            let row_size = self.width as usize * 8usize * 4usize;
-            ptr::copy((self.base_pointer + row_size) as *const u64, self.base_pointer as *mut u64, last_line as usize);
+            let nb_of_u64 = self.width * self.height / 2;
+            let row_size = self.width as usize * 8usize * mem::size_of::<u32>();
+            let last_row = (self.width * self.height) as usize * mem::size_of::<u32>();
+            ptr::copy((self.base_pointer + row_size) as *const u64, self.base_pointer as *mut u64, nb_of_u64 as usize);
+            ptr::write_bytes((self.base_pointer + last_row) as *mut u64, 0, row_size / mem::size_of::<u64>());
         }
     }
 }
