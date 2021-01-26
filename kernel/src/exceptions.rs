@@ -5,7 +5,7 @@ mod interruptions;
 use shared::exceptions::handlers::ExceptionContext;
 use cortex_a::regs::{ESR_EL1, FAR_EL1, DAIF, SPSR_EL1, SP_EL0, CurrentEL, RegisterReadOnly, RegisterReadWrite};
 use qemu_exit::QEMUExit;
-use cortex_a::{barrier};
+use cortex_a::{barrier, asm};
 use mmio::{BCMDeviceMemory};
 use crate::{memory, BCMDEVICES, UART};
 use mmio::logger::Output::Uart;
@@ -69,6 +69,7 @@ fn debug_halt(string: &'static str, e: &ExceptionContext) {
     debugln!("PSTATE: {:#x?}", SPSR_EL1.get());
     debugln!("SP_EL0: {:#x?}", SP_EL0.get());
 
-    const QEMU_EXIT_HANDLE: qemu_exit::AArch64 = qemu_exit::AArch64::new();
-    QEMU_EXIT_HANDLE.exit_failure();
+    loop {
+        asm::nop();
+    }
 }

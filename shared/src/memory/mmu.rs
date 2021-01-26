@@ -1,4 +1,4 @@
-use cortex_a::{barrier, regs::*};
+use cortex_a::{barrier, regs::*, asm};
 use crate::memory::mapping::{Descriptor};
 use crate::memory::mair;
 use crate::memory::translate::{Granule512MiB, TranslationGranule};
@@ -72,36 +72,35 @@ pub fn disable() {
 
 pub fn setup_kernel_tables(descriptors: &[Descriptor]) -> Result<(), &'static str> {
     unsafe {
-        setup_mmu_tables(|addr| TTBR1_EL1.set_baddr(addr),
-                         &mut KERNEL_TABLES, &descriptors.iter());
+        KERNEL_TABLES.map_descriptors(&descriptors.iter());
+        TTBR1_EL1.set_baddr(KERNEL_TABLES.phys_base_addr() as u64);
+        memory_flush();
     }
     Ok(())
 }
 
 pub fn setup_user_tables(descriptors: &[Descriptor]) -> Result<(), &'static str> {
     unsafe {
-        setup_mmu_tables(|addr| TTBR0_EL1.set_baddr(addr),
-                         &mut USER_TABLES, &descriptors.iter());
+        USER_TABLES.map_descriptors(&descriptors.iter());
+        TTBR0_EL1.set_baddr(USER_TABLES.phys_base_addr() as u64);
+        memory_flush();
     }
     Ok(())
 }
 
-pub fn setup_dyn_user_tables(descriptors: &Iter<Descriptor>, tables: &mut ArchTranslationTable)
+pub fn setup_dyn_user_tables(descriptors: &Iter<Descriptor>, tables: &mut ArchTranslationTable, pid: u16)
                              -> Result<(), &'static str> {
-    unsafe { setup_mmu_tables(|addr| TTBR0_EL1.set_baddr(addr), tables, descriptors); }
+    tables.map_descriptors(descriptors);
+    TTBR0_EL1.write(TTBR0_EL1::ASID.val(pid as u64) + TTBR0_EL1::BADDR.val(tables.phys_base_addr() as u64 >> 1));
+    unsafe { memory_flush(); }
     Ok(())
 }
 
-pub fn switch_user_tables(base_addr : u64) -> Result<(), &'static str> {
-    TTBR0_EL1.set_baddr(base_addr);
-    unsafe { memory_flush() }
-}
-
-fn setup_mmu_tables(apply: impl Fn(u64), tables: &mut ArchTranslationTable, descriptors: &Iter<Descriptor>)
-                           -> Result<(), &'static str> {
-    tables.map_descriptors(descriptors);
-    apply(tables.phys_base_addr() as u64);
-    unsafe { memory_flush() }
+pub fn switch_user_tables(pid: u16, base_addr : u64) -> Result<(), &'static str> {
+    unsafe { memory_flush(); }
+    TTBR0_EL1.write(TTBR0_EL1::ASID.val(pid as u64) + TTBR0_EL1::BADDR.val(base_addr >> 1));
+    unsafe { memory_flush(); }
+    Ok(())
 }
 
 unsafe fn memory_flush() -> Result<(), &'static str> {
@@ -109,6 +108,9 @@ unsafe fn memory_flush() -> Result<(), &'static str> {
     llvm_asm!("TLBI VMALLE1IS");
     barrier::dsb(barrier::ISH);
     barrier::isb(barrier::SY);
+    for i in 1..10 {
+        asm::nop()
+    }
     Ok(())
 }
 

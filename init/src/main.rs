@@ -11,7 +11,7 @@ use cortex_a::asm;
 use mmio::syscall::SysCall;
 use qemu_exit::QEMUExit;
 
-use cortex_a::regs::{SP, RegisterReadWrite};
+use cortex_a::regs::{CurrentEL, RegisterReadOnly};
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -26,7 +26,7 @@ fn my_panic(info: &core::panic::PanicInfo) -> ! {
     QEMU_EXIT_HANDLE.exit_failure()
 }
 
-/// Entrypoint of the program
+/// Entrypoint of the init program
 #[link_section = ".text.start"]
 #[no_mangle]
 pub unsafe extern "C" fn _main() -> () {
@@ -34,13 +34,12 @@ pub unsafe extern "C" fn _main() -> () {
     r0::zero_bss(&mut __bss_start, &mut __bss_end);
     mmio::SCREEN.appender(SysCall { }.into());
 
-    println!("show a message using SVC call");
+    println!("This is the init program, it is the first PID and will fork itself to create other programs");
 
     let mut count:u128 = 0;
     loop {
         if count % 10000 == 0 {
-            println!("current stack pointer {:x}", SP.get());
-            println!("show string from time to time {}", count);
+            println!("init program run at level {}", count);
         }
         count = count + 1;
     }

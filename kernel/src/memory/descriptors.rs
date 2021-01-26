@@ -1,15 +1,16 @@
 use core::ops::RangeInclusive;
 use shared::memory::mapping::{Translation, Mapping, MemAttributes,
                               AccessPermissions, Descriptor, AttributeFields};
+use shared::memory::mmu::VIRTUAL_ADDR_START;
 
 /// A virtual memory layout that is agnostic of the paging granularity that the
 /// hardware MMU will use.
 ///
-pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
+pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 6] = [
     //Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_START, super::map::physical::KERN_STACK_START - 1),
-        map : Mapping {
+        map: Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
@@ -21,7 +22,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
     //Stack Heap
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERNEL_HEAP_START, super::map::physical::KERNEL_HEAP_END),
-        map : Mapping {
+        map: Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
@@ -33,7 +34,7 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
     //Stack Kernel
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::KERN_STACK_START, super::map::physical::KERN_STACK_END - 1),
-        map : Mapping {
+        map: Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::CacheableDRAM,
@@ -62,16 +63,28 @@ pub static KERNEL_VIRTUAL_LAYOUT: [Descriptor; 5] = [
                 mem_attributes: MemAttributes::Device,
                 acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
-            }
+            },
         },
-    }
+    },
+    // Program Low memory
+    Descriptor {
+        virtual_range: || RangeInclusive::new(0x20_0000, 0x150_0000),
+        map: Mapping {
+            translation: Translation::Identity,
+            attribute_fields: AttributeFields {
+                mem_attributes: MemAttributes::CacheableDRAM,
+                acc_perms: AccessPermissions::ReadWriteKernel,
+                execute_never: true,
+            },
+        },
+    },
 ];
 
 pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 2] = [
     // MMA memory
     Descriptor {
         virtual_range: || RangeInclusive::new(super::map::physical::MMA_MEMORY_START, super::map::physical::MMA_MEMORY_END),
-        map : Mapping {
+        map: Mapping {
             translation: Translation::Identity,
             attribute_fields: AttributeFields {
                 mem_attributes: MemAttributes::UncacheableDRAM,
@@ -89,7 +102,7 @@ pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 2] = [
                 mem_attributes: MemAttributes::UncacheableDRAM,
                 acc_perms: AccessPermissions::ReadWriteKernel,
                 execute_never: true,
-            }
+            },
         },
     }/*,
     Descriptor {

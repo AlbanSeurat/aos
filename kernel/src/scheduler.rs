@@ -9,6 +9,9 @@ use crate::scheduler::process::ProcessState::Running;
 use mmio::PhysicalTimer;
 use crate::global::TIMER;
 use cortex_a::regs::{CNTV_TVAL_EL0, RegisterReadWrite};
+use shared::memory::mmu::VIRTUAL_ADDR_START;
+use core::str::from_utf8_unchecked;
+use core::slice;
 
 pub mod process;
 
@@ -29,7 +32,7 @@ impl Scheduler {
     }
 
     pub fn create_process(&mut self) -> &mut Process {
-        let mut process = Process::new(self.pid);
+        let mut process = Process::new(self.pid + 1);
         let mut descriptors = PROGRAM_VIRTUAL_LAYOUT.to_vec();
         descriptors.push(Descriptor {
             virtual_range: || RangeInclusive::new(PROG_START, PROG_END - 1),
@@ -42,18 +45,21 @@ impl Scheduler {
                 },
             },
         });
-        process.init_local_tlb(&descriptors);
         self.pid = self.pid + 1;
         self.processes.push(process);
-        self.processes.last_mut().expect("created process not working properly")
+        let created_process = self.processes.last_mut().expect("created process not working properly");
+        created_process.init_local_tlb(&descriptors);
+        created_process
     }
 
     pub unsafe fn schedule(&mut self, e: &ExceptionContext) {
+
         TIMER.reset_counter();
-        let pos = self.processes.iter_mut()
-            .enumerate().find( | (pos, p)| p.is_running())
-            .map_or(0, |( pos , p)|
-                { p.sleep(&e.gpr, e.spsr_el1, e.elr_el1, e.stack_el0); return pos });
+
+        self.processes.iter_mut()
+            .find( | p | p.is_running())
+            .map_or(0, | p |
+                { p.sleep(&e.gpr, e.spsr_el1, e.elr_el1, e.stack_el0); return 0; });
 
         let nb_processes = self.processes.len();
         let mut restaured = self.processes.get_mut(CNTV_TVAL_EL0.get() as usize % nb_processes)

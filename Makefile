@@ -1,6 +1,6 @@
 TOPTARGETS := all clean
 
-SUBDIRS := mmio shared program kernel boot
+SUBDIRS := mmio shared program init kernel boot
 
 $(TOPTARGETS): $(SUBDIRS)
 $(SUBDIRS):

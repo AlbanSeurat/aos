@@ -12,6 +12,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "aos-init"
+version = "0.1.0"
+dependencies = [
+ "cortex-a",
+ "mmio",
+ "qemu-exit",
+ "r0",
+ "shared",
+]
+
+[[package]]
 name = "aos-kernel"
 version = "0.1.0"
 dependencies = [
