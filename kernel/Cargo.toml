@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 mmio = { path = "../mmio" }
+usb = { path = "../usb" }
 shared = { path = "../shared" }
 qemu-exit = "1.0.0"
 cortex-a = { git = "https://github.com/AlbanSeurat/cortex-a", branch = "master" }

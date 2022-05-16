@@ -30,6 +30,7 @@ use register::{
 use crate::{debugln, debug, DMA, mbox};
 use crate::dma::SliceAllocator;
 use core::ptr::null;
+use core::sync::atomic::{compiler_fence, Ordering};
 
 register_bitfields! {
     u32,
@@ -69,8 +70,11 @@ pub mod channel {
 // Tags
 #[allow(dead_code)]
 pub mod tag {
-    pub const GETSERIAL: u32 = 0x10004;
-    pub const SETCLKRATE: u32 = 0x38002;
+    pub const GETSERIAL: u32       = 0x10004;
+    pub const GET_POWER_STATE: u32 = 0x20001;
+    pub const SET_POWER_STATE: u32 = 0x28001;
+
+    pub const SETCLKRATE: u32      = 0x38002;
 
     pub const GET_SCREEN_FRAME_BUFFER: u32 = 0x40001;
     pub const GET_PITCH: u32 = 0x40008;
@@ -157,6 +161,7 @@ impl<'a> Mbox<'a> {
         self.set_and_inc(mbox::tag::LAST);
         self.set_at_pos((self.pos * 4) as u32, 0);
         self.set_at_pos(mbox::REQUEST, 1);
+        compiler_fence(Ordering::Release);
         self.call(if self.is_dma { self.dma } else { &self.stack }, channel)
     }
 
