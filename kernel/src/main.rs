@@ -3,9 +3,11 @@
 #![feature(core_intrinsics)]
 #![feature(duration_constants)]
 #![feature(alloc_error_handler)]
+#![feature(allocator_api)]
 
 #[macro_use] extern crate alloc;
 #[macro_use] extern crate mmio;
+
 
 use aarch64_cpu::asm;
 
@@ -13,13 +15,16 @@ use memory::descriptors::{KERNEL_VIRTUAL_LAYOUT, PROGRAM_VIRTUAL_LAYOUT};
 use mmio::{DMA, HEAP, IRQ};
 use shared::memory::mmu::{VIRTUAL_ADDR_START};
 
-use crate::global::{BCMDEVICES, UART, TIMER};
-use crate::scheduler::process::{create_init_program, create_tmp_init_program};
+use crate::scheduler::process::{create_init_program};
+use crate::global::{BCMDEVICES, UART, PTIMER, STIMER, USB};
+
+use crate::usb::setup_usb;
 
 mod memory;
 mod exceptions;
 mod global;
 mod scheduler;
+mod usb;
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script
@@ -42,10 +47,8 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
         DMA.lock().init(memory::map::physical::MMA_MEMORY_START,
                         memory::map::physical::MMA_MEMORY_END - memory::map::physical::MMA_MEMORY_START);
     }
-    let v_mbox = mmio::Mbox::new_with_dma(memory::map::virt::MBOX_BASE);
+    let mut v_mbox = mmio::Mbox::new_with_dma(memory::map::virt::MBOX_BASE);
     mmio::LOGGER.appender(UART.into());
-    let console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
-    mmio::SCREEN.appender( console.into());
 
     unsafe { print!("MMU Kernel mapping : \n{}", shared::memory::mmu::kernel_tables()); }
     unsafe { print!("MMU Program mapping : \n{}", shared::memory::mmu::user_tables()); }
@@ -54,19 +57,18 @@ pub unsafe extern "C" fn _upper_kernel() -> ! {
         HEAP.lock().init(memory::map::virt::KERNEL_HEAP_START,
                          memory::map::virt::KERNEL_HEAP_END - memory::map::virt::KERNEL_HEAP_START);
     }
+    setup_usb(&mut v_mbox);
 
-    // setup IRQs
-    //UART.enable_rx_irq(&irq, &bcm);
+    let mut console = mmio::FrameBufferConsole::new(v_mbox, VIRTUAL_ADDR_START);
+    mmio::SCREEN.appender( console.into());
 
-    create_tmp_init_program();
-    create_tmp_init_program();
-    create_tmp_init_program();
-    create_tmp_init_program();
-    create_tmp_init_program();
 
+    // TODO : remove tmp program and have init with fork syscall
+    create_init_program();
     create_init_program();
 
-    TIMER.setup(&BCMDEVICES);
+    PTIMER.setup(&BCMDEVICES);
+
     unsafe { IRQ::enable(); }
 
     loop {

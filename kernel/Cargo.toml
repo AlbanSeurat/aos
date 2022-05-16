@@ -8,6 +8,7 @@ edition = "2021"
 
 [dependencies]
 mmio = { path = "../mmio" }
+usb = { path = "../usb" }
 shared = { path = "../shared" }
 qemu-exit = "3.0.2"
 aarch64-cpu = "9.4.0"
