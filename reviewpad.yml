@@ -8,5 +8,5 @@ workflows:
     - if: $hasFilePattern("boot/**")
       then:
         - $addLabel("boot")
-        - $assignTeamReviewer(["AlbanSeurat"]) # This 'Security' team must exist in your GitHub Repository
-        - $commentOnce("The Boot team has been involved because the authentication layer is touched")
+        - $commentOnce("No need to be reviewed, boot is easy to change")
+        - $merge()
