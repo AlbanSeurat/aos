@@ -18,7 +18,7 @@ pub unsafe fn init_el2() {
 /// is overwritten.
 #[no_mangle]
 unsafe extern "C" fn default_exception_handler(e: &ExceptionContext) {
-    debugln!("Unknown Exception Context");
+    debugln!("[ERROR]Unknown Exception Context");
     debug_halt(e);
 }
 
