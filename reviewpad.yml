@@ -1,0 +1,12 @@
+workflows:
+  - name: My First Reviewpad Workflow
+    run:
+      - $addLabel("foo")
+
+  - name: Security Process When Modifying Authentication Layer
+    run:
+      - if: $hasFilePattern("**/boot/**")
+        then:
+          - $addLabel("security")
+          - $assignTeamReviewer(["Security"]) # This 'Security' team must exist in your GitHub Repository
+          - $commentOnce("The Security team has been involved because the authentication layer is touched")

@@ -1,5 +1,8 @@
 use core::fmt::{Write, Arguments};
 use crate::{LOGGER, SCREEN};
+use crate::timer::SystemTimer;
+use register::{Field, IntLike, RegisterLongName, FieldValue};
+use register::mmio::ReadWrite;
 
 #[macro_export]
 macro_rules! debug {
@@ -38,4 +41,8 @@ pub fn _print(args: Arguments) {
     unsafe {
         SCREEN.write_fmt(args).unwrap();
     }
+}
+
+pub unsafe fn any_as_u8_slice<T: Sized>(p: &T) -> &[u8] {
+    core::slice::from_raw_parts((p as *const T) as *const u8,core::mem::size_of::<T>())
 }
