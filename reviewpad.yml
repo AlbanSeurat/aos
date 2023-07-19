@@ -1,0 +1,12 @@
+workflows:
+- name: My aos reviewpad workflow
+  run:
+    - $addLabel("aos")
+
+- name: Security Process When Modifying Authentication Layer
+  run:
+    - if: $hasFilePattern("boot/**")
+      then:
+        - $addLabel("boot")
+        - $assignTeamReviewer(["Boot"]) # This 'Security' team must exist in your GitHub Repository
+        - $commentOnce("The Boot team has been involved because the authentication layer is touched")
