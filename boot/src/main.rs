@@ -70,6 +70,8 @@ unsafe fn start() -> ! {
     loop {
         asm::wfi();
     }
+
+    panic!("Should not be there");
 }
 
 /// Entrypoint of the processor.
