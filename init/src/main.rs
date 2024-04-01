@@ -1,17 +1,12 @@
 #![no_std]
 #![no_main]
-#![feature(asm)]
 #![feature(core_intrinsics)]
-#![feature(global_asm)]
 #![feature(duration_constants)]
-#![feature(llvm_asm)]
 
 #[macro_use] extern crate mmio;
-use cortex_a::asm;
+use aarch64_cpu::asm;
 use mmio::syscall::SysCall;
 use qemu_exit::QEMUExit;
-
-use cortex_a::regs::{CurrentEL, RegisterReadOnly};
 
 extern "C" {
     // Boundaries of the .bss section, provided by the linker script

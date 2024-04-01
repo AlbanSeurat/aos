@@ -1,4 +1,5 @@
-use cortex_a::{barrier, regs::*, asm};
+use core::arch::asm;
+use aarch64_cpu::{asm::barrier, registers::*, asm};
 use crate::memory::mapping::{Descriptor};
 use crate::memory::mair;
 use crate::memory::translate::{Granule512MiB, TranslationGranule};
@@ -50,24 +51,20 @@ pub fn init() -> Result<(), &'static str> {
     // Switch the MMU on.
     //
     // First, force all previous changes to be seen before the MMU is enabled.
-    unsafe {
-        barrier::isb(barrier::SY);
-    }
+    barrier::isb(barrier::SY);
 
     // Enable the MMU and turn on data and instruction caching.
-    SCTLR_EL1.modify(SCTLR_EL1::M::Enable + SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
+    SCTLR_EL1.write(SCTLR_EL1::M::Enable + SCTLR_EL1::C::Cacheable + SCTLR_EL1::I::Cacheable);
 
     // Force MMU init to complete before next instruction
-    unsafe {
-        barrier::isb(barrier::SY);
-    }
+    barrier::isb(barrier::SY);
     Ok(())
 }
 
 #[inline]
 pub fn disable() {
     // Enable the MMU and turn on data and instruction caching.
-    SCTLR_EL1.modify(SCTLR_EL1::M::Disable + SCTLR_EL1::C::NonCacheable + SCTLR_EL1::I::NonCacheable);
+    SCTLR_EL1.write(SCTLR_EL1::M::Disable + SCTLR_EL1::C::NonCacheable + SCTLR_EL1::I::NonCacheable);
 }
 
 pub fn setup_kernel_tables(descriptors: &[Descriptor]) -> Result<(), &'static str> {
@@ -105,7 +102,7 @@ pub fn switch_user_tables(pid: u16, base_addr : u64) -> Result<(), &'static str>
 
 unsafe fn memory_flush() -> Result<(), &'static str> {
     barrier::dsb(barrier::ISHST);
-    llvm_asm!("TLBI VMALLE1IS");
+    asm!("TLBI VMALLE1IS");
     barrier::dsb(barrier::ISH);
     barrier::isb(barrier::SY);
     for i in 1..10 {

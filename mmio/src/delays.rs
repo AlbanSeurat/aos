@@ -22,7 +22,7 @@
  * SOFTWARE.
  */
 
-use cortex_a::asm;
+use aarch64_cpu::asm;
 
 /*
  *

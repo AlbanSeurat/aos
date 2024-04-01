@@ -1,8 +1,5 @@
 mod hcd;
 
-use register::{mmio::ReadWrite};
-use core::ops;
-use register::mmio::ReadOnly;
 
 pub enum USBError {
 

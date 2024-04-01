@@ -3,13 +3,9 @@ mod syscalls;
 mod interruptions;
 
 use shared::exceptions::handlers::ExceptionContext;
-use cortex_a::regs::{ESR_EL1, FAR_EL1, DAIF, SPSR_EL1, SP_EL0, CurrentEL, RegisterReadOnly, RegisterReadWrite};
+use aarch64_cpu::registers::{ESR_EL1, FAR_EL1, SPSR_EL1, SP_EL0, CurrentEL, Readable, Writeable};
 use qemu_exit::QEMUExit;
-use cortex_a::{barrier, asm};
-use mmio::{BCMDeviceMemory};
-use crate::{memory, BCMDEVICES, UART};
-use mmio::logger::Output::Uart;
-use mmio::io::Reader;
+use aarch64_cpu::asm::*;
 use crate::exceptions::interruptions::irq_handler;
 
 extern "C" {
@@ -18,7 +14,7 @@ extern "C" {
 
 pub unsafe fn init() {
     let exception_vectors_start: u64 = &__exception_vectors_start as *const _ as u64;
-    cortex_a::regs::VBAR_EL1.set(exception_vectors_start);
+    aarch64_cpu::registers::VBAR_EL1.set(exception_vectors_start);
     barrier::isb(barrier::SY);
 }
 
@@ -70,6 +66,6 @@ fn debug_halt(string: &'static str, e: &ExceptionContext) {
     debugln!("SP_EL0: {:#x?}", SP_EL0.get());
 
     loop {
-        asm::nop();
+        nop();
     }
 }

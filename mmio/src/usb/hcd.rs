@@ -1,4 +1,4 @@
-use register::mmio::{ReadWrite, ReadOnly};
+use tock_registers::registers::{ReadWrite, ReadOnly};
 
 /*
 #define DWC_CORE_OTGCONTROL			((volatile __attribute__((aligned(4))) struct CoreOtgControl*)(uintptr_t)(RPi_IO_Base_Addr + USB_CORE_OFFSET + 0x00))

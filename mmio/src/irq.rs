@@ -1,5 +1,7 @@
-use register::mmio::ReadWrite;
+use tock_registers::registers::ReadWrite;
 use core::ops;
+use core::arch::asm;
+use tock_registers::interfaces::Writeable;
 
 #[allow(non_snake_case)]
 #[repr(C)]
@@ -35,11 +37,11 @@ impl IRQ {
     }
 
     pub unsafe fn enable() {
-        llvm_asm!("msr daifclr, #2");
+        asm!("msr daifclr, #2");
     }
 
     pub unsafe fn disable() {
-        llvm_asm!("msr daifset, #2");
+        asm!("msr daifset, #2");
     }
 
     /// Returns a pointer to the register block

@@ -1,8 +1,6 @@
-use core::alloc::{Allocator, AllocError, Layout, GlobalAlloc};
-use core::ptr::{NonNull};
-use core::cell::RefCell;
+use core::alloc::{AllocError, Layout, GlobalAlloc};
 use core::{mem, slice};
-use linked_list_allocator::{Heap, LockedHeap};
+use linked_list_allocator::{LockedHeap};
 
 pub trait SliceAllocator {
     fn alloc_slice_zeroed<'a, T>(

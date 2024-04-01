@@ -1,10 +1,9 @@
 use mmio::Uart;
 use mmio::io::{IoResult, Reader, Writer};
 use crate::memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
-use cortex_a::regs::{SP, RegisterReadWrite, ELR_EL2, SP_EL1, HCR_EL2, CNTHCTL_EL2, CNTVOFF_EL2, SPSR_EL2};
-use cortex_a::asm;
-use crate::{STACK_START, memory, exceptions};
-use mmio::logger::Logger;
+use aarch64_cpu::registers::{SP, ELR_EL2, SP_EL1, HCR_EL2, CNTHCTL_EL2, CNTVOFF_EL2, SPSR_EL2, Writeable};
+use aarch64_cpu::asm;
+use crate::{STACK_START, memory};
 
 #[inline]
 pub fn setup_el1_and_jump_high() -> ! {
@@ -76,7 +75,7 @@ unsafe fn load_kernel(uart: &mut Uart) -> IoResult<()> {
     uart.writes("\x03\x03\x03")?;
     let len = uart.read_dword()?;
     uart.writes("\x03\x03\x03")?;
-    uart.write_dword(len);
+    let _ = uart.write_dword(len);
     uart.writes("\x03\x03\x03")?;
     let kernel_addr: *mut u8 = memory::map::physical::KERN_START as *mut u8;
     // Read the kernel byte by byte.

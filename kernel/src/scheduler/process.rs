@@ -1,28 +1,22 @@
 global_asm!(include_str!("context.S"));
 use alloc::vec::Vec;
 use core::borrow::Borrow;
-use core::intrinsics::{size_of, const_allocate};
 
-use cortex_a::asm;
-use cortex_a::regs::{ELR_EL1, RegisterReadWrite, SP_EL0, SPSR_EL1, TTBR0_EL1, ELR_EL3, SP, SP_EL1};
+use aarch64_cpu::asm;
+use aarch64_cpu::registers::{ELR_EL1, SP_EL0, SPSR_EL1, SP, Writeable};
 
 use shared::exceptions::handlers::GPR;
 
-use crate::memory;
 use shared::memory::mmu::{ArchTranslationTable, setup_dyn_user_tables, switch_user_tables, VIRTUAL_ADDR_START};
 use shared::memory::mapping::Descriptor;
 use crate::scheduler::PROG_START;
 use crate::scheduler::process::ProcessState::{Sleep, Running};
-use core::cell::Cell;
-use cortex_a::asm::eret;
-use crate::global::{SCHEDULER, BCMDEVICES, TIMER};
+use crate::global::{SCHEDULER};
 use core::fmt::{Debug, Formatter};
-use core::{fmt, slice};
-use alloc::fmt::format;
-use core::str::from_utf8_unchecked;
+use core::{fmt};
+use core::arch::global_asm;
 
 extern "C" {
-    #[inline]
     fn __restore_and_eret(regs: usize) -> !;
 }
 
@@ -94,7 +88,7 @@ impl Process {
     pub fn init_local_tlb(&mut self, descriptors: &Vec<Descriptor>) {
         let desc_iter = descriptors.iter();
         setup_dyn_user_tables(&desc_iter, &mut self.tlb, self.pid);
-        unsafe { print!("MMU Program mapping : \n{}", self.tlb); }
+        print!("MMU Program mapping : \n{}", self.tlb);
     }
 
     pub fn run(&mut self) {

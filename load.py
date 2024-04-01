@@ -1,7 +1,6 @@
 import sys
 import serial
 import os
-import time
 
 kernel_img = "kernel-high.img"
 
@@ -36,21 +35,25 @@ def read_kernel():
    return data
 
 s = create_serial()
-ack(s)
-
-kernel_size = os.path.getsize(kernel_img)
-print(f"write {kernel_size:d}")
-s.write(kernel_size.to_bytes(4, byteorder='big'))
-ack(s)
-
-print(f"kernel size received {read_dword(s):d}")
-ack(s)
-
-print("send kernel")
-send_kernel(s, read_kernel())
-ack(s)
-
-print("kernel sent")
 while 1:
-   print(s.readline())
+   ack(s)
+
+   kernel_size = os.path.getsize(kernel_img)
+   print(f"write {kernel_size:d}")
+   s.write(kernel_size.to_bytes(4, byteorder='big'))
+   ack(s)
+
+   print(f"kernel size received {read_dword(s):d}")
+   ack(s)
+
+   print("send kernel")
+   send_kernel(s, read_kernel())
+   ack(s)
+
+   print("kernel sent")
+   line = ""
+   while line != b'load kernel\n':
+      line = s.readline()
+      print(line)
+   print("re-run")
 

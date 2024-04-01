@@ -1,18 +1,14 @@
 #![no_std]
 #![no_main]
-#![feature(asm)]
 #![feature(core_intrinsics)]
-#![feature(global_asm)]
-#![feature(llvm_asm)]
 
 #[macro_use]
 extern crate mmio;
 
-use cortex_a::asm;
-use cortex_a::regs::*;
+use core::arch::asm;
+use aarch64_cpu::asm;
+use aarch64_cpu::registers::*;
 use qemu_exit::QEMUExit;
-use memory::descriptors::KERNEL_VIRTUAL_LAYOUT;
-use crate::stage1::{setup_el1_and_jump_high};
 use CurrentEL::EL::EL2;
 
 mod exceptions;
@@ -48,7 +44,7 @@ unsafe fn start() -> ! {
 
     let gpio = mmio::GPIO::new(memory::map::physical::GPIO_BASE);
     let mut v_mbox = mmio::Mbox::new(memory::map::physical::MBOX_BASE);
-    let mut uart = mmio::Uart::new(memory::map::physical::UART_BASE);
+    let uart = mmio::Uart::new(memory::map::physical::UART_BASE);
 
     match uart.init(&mut v_mbox, &gpio) {
         Ok(_) => {
@@ -64,7 +60,7 @@ unsafe fn start() -> ! {
     exceptions::init_el2();
 
     // call hypervisor to reset the kernel load
-    llvm_asm!("HVC 1");
+    asm!("HVC 1");
 
     // should never be called
     loop {

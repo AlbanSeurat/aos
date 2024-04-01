@@ -1,3 +1,4 @@
+use core::arch::global_asm;
 use core::fmt::{Debug, Formatter};
 use core::fmt;
 global_asm!(include_str!("vectors.S"));
@@ -12,7 +13,7 @@ impl Debug for GPR {
 
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for i in 0..self.x.len() {
-            f.write_fmt(format_args!("x{:02}:{:08x}, ", i, self.x[i]));
+            f.write_fmt(format_args!("x{:02}:{:08x}, ", i, self.x[i])).expect("Debug formatting error");
         }
         Ok(())
     }

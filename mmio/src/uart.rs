@@ -28,8 +28,9 @@ use core::{
     ops,
     sync::atomic::{compiler_fence, Ordering},
 };
-use cortex_a::asm;
-use register::{mmio::*, register_bitfields};
+use aarch64_cpu::asm;
+use tock_registers::{registers::*, register_bitfields};
+use tock_registers::interfaces::{Readable, ReadWriteable, Writeable};
 use crate::io::{Writer, Reader, IoResult};
 
 // PL011 UART registers.
@@ -156,7 +157,7 @@ pub struct RegisterBlock {
 pub enum UartError {
     MailboxError,
 }
-pub type ResultUart<T> = ::core::result::Result<T, UartError>;
+pub type ResultUart<T> = Result<T, UartError>;
 
 #[derive(Copy, Clone)]
 pub struct Uart {
@@ -234,7 +235,7 @@ impl Uart {
         Ok(())
     }
 
-    pub unsafe fn enable_rx_irq(&self, irq : &IRQ, bcm: &BCMDeviceMemory) {
+    pub unsafe fn enable_rx_irq(&self, irq : &IRQ, _bcm: &BCMDeviceMemory) {
         self.IMSC.set(1 << 4);
         irq.external_enable(1 << 25);
     }

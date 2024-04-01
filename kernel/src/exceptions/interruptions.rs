@@ -1,8 +1,8 @@
 use crate::global::{BCMDEVICES, SCHEDULER};
 use crate::exceptions::{syscalls, debug_halt};
 use shared::exceptions::handlers::ExceptionContext;
-use mmio::PhysicalTimer;
-use core::time::Duration;
+use tock_registers::interfaces::Readable;
+
 
 pub unsafe fn irq_handler(e: &ExceptionContext) {
     let source = BCMDEVICES.CORE0_INTERRUPT_SOURCE.get();

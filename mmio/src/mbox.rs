@@ -23,13 +23,14 @@
  */
 
 use core::{ops, mem};
-use register::{
-    mmio::{ReadOnly, WriteOnly},
+use tock_registers::{
+    registers::{ReadOnly, WriteOnly},
     register_bitfields,
 };
-use crate::{debugln, debug, DMA, mbox};
+use crate::{DMA, mbox};
 use crate::dma::SliceAllocator;
-use core::ptr::null;
+use core::arch::asm;
+use tock_registers::interfaces::{Readable, Writeable};
 
 register_bitfields! {
     u32,
@@ -127,7 +128,7 @@ impl<'a> Mbox<'a> {
     }
 
     pub fn new_with_dma(base_addr: usize) -> Mbox<'a> {
-        let ptr: &mut [u32] = unsafe { DMA.alloc_slice_zeroed(36, mem::align_of::<u32>()).unwrap() };
+        let ptr: &mut [u32] = DMA.alloc_slice_zeroed(36, mem::align_of::<u32>()).unwrap();
         Mbox { dma: ptr, stack: [0; 36], base_addr, is_dma: true, pos: 2 }
     }
 
@@ -146,7 +147,7 @@ impl<'a> Mbox<'a> {
     }
 
     pub fn clear(&mut self) {
-        for i in 0..self.pos {
+        for _i in 0..self.pos {
             self.set_and_inc(0);
         }
         self.pos = 2;
@@ -167,7 +168,7 @@ impl<'a> Mbox<'a> {
             if !self.STATUS.is_set(STATUS::FULL) {
                 break;
             }
-            unsafe { llvm_asm!("nop" :::: "volatile") };
+            unsafe { asm!("nop") };
         }
         let buf_ptr = buffer.as_ptr() as u32;
         // write the address of our message to the mailbox with channel identifier
@@ -181,7 +182,7 @@ impl<'a> Mbox<'a> {
                     break;
                 }
 
-                unsafe { llvm_asm!("nop" :::: "volatile") };
+                unsafe { asm!("nop") };
             }
 
             let resp: u32 = self.READ.get();

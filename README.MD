@@ -21,9 +21,11 @@ setup the tty to simulate the serial
 
 ```socat pty,link=cu.serial-master,raw,echo=0 pty,link=cu.serial-slave,raw,echo=0```
 
-prepare the sender 
+prepare the sender
 
-```python3.9 load.py cu.serial-slave```
+```pip install pyserial```
+
+```python3 load.py cu.serial-slave```
 
 run arguments
 

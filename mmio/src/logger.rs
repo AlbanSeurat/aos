@@ -4,7 +4,6 @@ use crate::uart::Uart;
 use crate::syscall::SysCall;
 use crate::FrameBufferConsole;
 use crate::io::{Writer, IoResult};
-use core::fmt::Error;
 
 pub struct Logger {
     output: Output,

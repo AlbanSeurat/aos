@@ -8,7 +8,7 @@ use shared::exceptions::handlers::ExceptionContext;
 use crate::scheduler::process::ProcessState::Running;
 use mmio::PhysicalTimer;
 use crate::global::TIMER;
-use cortex_a::regs::{CNTV_TVAL_EL0, RegisterReadWrite};
+use aarch64_cpu::registers::{CNTV_TVAL_EL0, Readable};
 use shared::memory::mmu::VIRTUAL_ADDR_START;
 use core::str::from_utf8_unchecked;
 use core::slice;
@@ -32,7 +32,7 @@ impl Scheduler {
     }
 
     pub fn create_process(&mut self) -> &mut Process {
-        let mut process = Process::new(self.pid + 1);
+        let process = Process::new(self.pid + 1);
         let mut descriptors = PROGRAM_VIRTUAL_LAYOUT.to_vec();
         descriptors.push(Descriptor {
             virtual_range: || RangeInclusive::new(PROG_START, PROG_END - 1),
@@ -62,7 +62,7 @@ impl Scheduler {
                 { p.sleep(&e.gpr, e.spsr_el1, e.elr_el1, e.stack_el0); return 0; });
 
         let nb_processes = self.processes.len();
-        let mut restaured = self.processes.get_mut(CNTV_TVAL_EL0.get() as usize % nb_processes)
+        let restaured = self.processes.get_mut(CNTV_TVAL_EL0.get() as usize % nb_processes)
             .expect("process not found");
         restaured.restore(e.stack_el1);
     }

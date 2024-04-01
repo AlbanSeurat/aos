@@ -1,8 +1,10 @@
-use register::{register_bitfields, InMemoryRegister, Field};
+use tock_registers::{register_bitfields, registers::InMemoryRegister, fields::Field};
 use crate::memory::mapping::{AttributeFields, MemAttributes, AccessPermissions};
 use crate::memory::mair;
 use core::{fmt, convert};
 use core::fmt::{Formatter, Display};
+use tock_registers::fields::FieldValue;
+use tock_registers::interfaces::{Readable, Writeable};
 
 
 // A table descriptor, as per ARMv8-A Architecture Reference Manual Figure D5-15.
@@ -171,7 +173,7 @@ impl PageDescriptor {
 }
 
 /// Convert the kernel's generic memory attributes to HW-specific attributes of the MMU.
-impl convert::From<AttributeFields> for register::FieldValue<u64, STAGE1_DESCRIPTOR::Register>
+impl convert::From<AttributeFields> for FieldValue<u64, STAGE1_DESCRIPTOR::Register>
 {
     fn from(attribute_fields: AttributeFields) -> Self {
         // Memory attributes.

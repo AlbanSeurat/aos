@@ -1,9 +1,8 @@
-use register::{
-    mmio::ReadWrite,
+use tock_registers::{
+    registers::{ ReadWrite, ReadOnly},
     register_bitfields,
 };
 use core::ops;
-use register::mmio::ReadOnly;
 
 // Local Timer control status
 register_bitfields! {

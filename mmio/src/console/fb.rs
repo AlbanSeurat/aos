@@ -1,9 +1,5 @@
-use core::sync::atomic::{compiler_fence, Ordering};
 use core::{ptr, mem};
-use crate::{mbox, DMA};
-use crate::{debugln, debug};
-use core::alloc::{Allocator, Layout};
-use cortex_a::asm;
+use crate::{mbox};
 
 #[derive(Debug)]
 pub struct FrameBufferError {}
@@ -18,7 +14,7 @@ pub struct FrameBuffer {
 const BPP: u32 = 32;
 
 impl FrameBuffer {
-    pub fn new(v_mbox: &mut mbox::Mbox, baseaddr: usize) -> Result<FrameBuffer, FrameBufferError> {
+    pub fn new(v_mbox: &mut mbox::Mbox, _baseaddr: usize) -> Result<FrameBuffer, FrameBufferError> {
 
         v_mbox.clear();
 

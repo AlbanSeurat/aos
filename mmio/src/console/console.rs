@@ -3,7 +3,6 @@ use font8x8::{BASIC_FONTS, UnicodeFonts};
 use crate::console::fb::FrameBuffer;
 use crate::mbox;
 use crate::io::{Writer, IoResult};
-use crate::{debugln, debug};
 
 pub struct FrameBufferConsole {
     lfb: FrameBuffer,

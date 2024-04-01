@@ -1,4 +1,4 @@
-use cortex_a::regs::*;
+use aarch64_cpu::registers::*;
 
 pub const DEVICE: u64               = 0;
 pub const NORMAL: u64               = 1;

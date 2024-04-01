@@ -1,7 +1,7 @@
 use shared::exceptions::handlers::ExceptionContext;
-use cortex_a::regs::{ESR_EL1, ESR_EL2, FAR_EL1, SPSR_EL1, CurrentEL, VBAR_EL2, RegisterReadWrite, RegisterReadOnly};
+use aarch64_cpu::registers::{ESR_EL1, ESR_EL2, FAR_EL1, SPSR_EL1, CurrentEL, VBAR_EL2, Writeable, Readable};
 use qemu_exit::QEMUExit;
-use cortex_a::barrier;
+use aarch64_cpu::asm::barrier;
 use crate::stage1::setup_el1_and_jump_high;
 
 extern "C" {
@@ -10,7 +10,7 @@ extern "C" {
 
 pub unsafe fn init_el2() {
     let exception_vectors_start: u64 = &__exception_vectors_start as *const _ as u64;
-    cortex_a::regs::VBAR_EL2.set(exception_vectors_start);
+    VBAR_EL2.set(exception_vectors_start);
     barrier::isb(barrier::SY);
 }
 

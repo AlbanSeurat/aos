@@ -1,19 +1,17 @@
+use core::arch::asm;
 use core::slice;
 use core::str::from_utf8_unchecked;
-use core::time::Duration;
-use mmio::timer::PhysicalTimer;
 use qemu_exit::QEMUExit;
-use crate::exceptions::{syscalls};
-use cortex_a::regs::{ESR_EL1, SP, RegisterReadWrite, RegisterReadOnly};
+
+use aarch64_cpu::registers::{ESR_EL1, Readable, SP};
 use shared::exceptions::handlers::ExceptionContext;
-use crate::global::{UART, BCMDEVICES};
+use crate::global::UART;
 use mmio::io::Reader;
-use crate::memory;
 
 pub(crate) unsafe fn reset() {
     let received = UART.read_char().unwrap_or(0) as char;
     match received {
-        'r' => llvm_asm!("HVC 1"),
+        'r' => asm!("HVC 1"),
         'h' => syscall_halt(),
         _ => debug!("UART received : {}\n", received),
     }
