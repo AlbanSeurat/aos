@@ -1,7 +1,6 @@
 use crate::global::{BCMDEVICES, SCHEDULER};
 use crate::exceptions::{syscalls, debug_halt};
 use shared::exceptions::handlers::ExceptionContext;
-use mmio::PhysicalTimer;
 use core::time::Duration;
 
 pub unsafe fn irq_handler(e: &ExceptionContext) {
