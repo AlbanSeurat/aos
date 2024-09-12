@@ -1,10 +1,10 @@
 [workspace]
 resolver= "2"
 members = [
+    "usb",
     "mmio",
     "shared",
     "init",
-    "program",
     "kernel",
     "boot",
 ]

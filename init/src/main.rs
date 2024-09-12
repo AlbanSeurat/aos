@@ -33,7 +33,7 @@ pub unsafe extern "C" fn _main() -> () {
 
     let mut count:u128 = 0;
     loop {
-        if count % 10000 == 0 {
+        if count % 1000000 == 0 {
             println!("init program run at level {}", count);
         }
         count = count + 1;

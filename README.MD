@@ -74,7 +74,7 @@ EC : Exception Class
 
 - Disassemble stripped version 
 
-```aarch64-none-elf-objdump -b binary -maarch64 -D program.img```
+```aarch64-none-elf-objdump -b binary -maarch64 -D init.img```
 
 - Disassemble  version with symbol
 

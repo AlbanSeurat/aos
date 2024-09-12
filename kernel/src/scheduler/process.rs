@@ -91,16 +91,6 @@ impl Process {
         print!("MMU Program mapping : \n{}", self.tlb);
     }
 
-    pub fn run(&mut self) {
-        self.state = Running;
-        println!("START PROCESS PID {} at {:x}", self.pid, PROG_START as u64);
-        SP_EL0.set(0x0040_0000);
-        // Indicate that we "return" to EL0
-        SPSR_EL1.write(SPSR_EL1::M::EL0t);
-        ELR_EL1.set(PROG_START as u64);
-        asm::eret();
-    }
-
     pub fn is_running(&self) -> bool {
         self.state == Running
     }
@@ -124,17 +114,10 @@ impl Process {
     }
 }
 
-pub(crate) fn create_tmp_init_program() -> &'static mut Process {
-    let process = unsafe { SCHEDULER.create_process() };
-    let bytes = include_bytes!("../../../program.img");
-    unsafe { core::ptr::copy(bytes as *const u8, PROG_START as *mut u8, bytes.len()) };
-    process
-}
 
 pub(crate) fn create_init_program() -> &'static mut Process {
     let process = unsafe { SCHEDULER.create_process() };
     let bytes = include_bytes!("../../../init.img");
     unsafe { core::ptr::copy(bytes as *const u8, PROG_START as *mut u8, bytes.len()) };
-    //process.run();
     process
 }

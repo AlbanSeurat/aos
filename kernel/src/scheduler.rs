@@ -6,8 +6,7 @@ use shared::memory::mapping::{Descriptor, Mapping, Translation, AttributeFields,
 use core::ops::RangeInclusive;
 use shared::exceptions::handlers::ExceptionContext;
 use crate::scheduler::process::ProcessState::Running;
-use mmio::PhysicalTimer;
-use crate::global::TIMER;
+use crate::global::PTIMER;
 use aarch64_cpu::registers::{CNTV_TVAL_EL0, Readable};
 use shared::memory::mmu::VIRTUAL_ADDR_START;
 use core::str::from_utf8_unchecked;
@@ -53,8 +52,7 @@ impl Scheduler {
     }
 
     pub unsafe fn schedule(&mut self, e: &ExceptionContext) {
-
-        TIMER.reset_counter();
+        PTIMER.reset_counter();
 
         self.processes.iter_mut()
             .find( | p | p.is_running())
