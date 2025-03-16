@@ -23,6 +23,7 @@ impl<T, const N: usize> BaseAddr for [T; N] {
 /// aligned, hence the "reverse" order of appearance.
 #[repr(C)]
 #[repr(align(65536))]
+#[derive(Copy, Clone)]
 pub struct FixedSizeTranslationTable<const NUM_TABLES: usize> {
     /// Page descriptors, covering 64 KiB windows per entry.
     lvl3: [[PageDescriptor; 8192]; NUM_TABLES],
@@ -67,24 +68,22 @@ impl<const NUM_TABLES: usize> FixedSizeTranslationTable<{ NUM_TABLES }> {
         range: RangeInclusive<usize>,
         translation: &Translation,
         attr: &AttributeFields,
-    ) -> Result<(), &'static str> {
+    ) {
         for phys_page in range.step_by(Granule64KiB::SIZE) {
-            let page_descriptor = self.page_descriptor_from(phys_page)?;
+            let page_descriptor = self.page_descriptor_from(phys_page).expect("wrong page descriptor");
             let output_addr = match translation {
                 Translation::Identity => phys_page,
                 Translation::Offset(a) => a + phys_page,
             };
             *page_descriptor = PageDescriptor::new(output_addr & Granule64KiB::ALIGN, &attr);
         }
-
-        Ok(())
     }
 
     pub fn phys_base_addr(&self) -> usize {
         return self.lvl2.phys_base_addr();
     }
 
-    pub fn map_descriptors(&mut self, descriptors: &Iter<Descriptor>) -> Result<(), &'static str> {
+    pub fn map_descriptors(&mut self, descriptors: &Iter<Descriptor>) {
 
         // Populate the l2 entries.
         for (lvl2_nr, lvl2_entry) in self.lvl2.iter_mut().enumerate() {
@@ -94,10 +93,9 @@ impl<const NUM_TABLES: usize> FixedSizeTranslationTable<{ NUM_TABLES }> {
         for desc in descriptors.as_slice() {
             let range = (desc.virtual_range)();
             unsafe {
-                self.map_pages_at(range, &desc.map.translation, &desc.map.attribute_fields)?;
+                self.map_pages_at(range, &desc.map.translation, &desc.map.attribute_fields);
             }
         }
-        Ok(())
     }
 }
 

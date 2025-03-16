@@ -104,16 +104,5 @@ pub static PROGRAM_VIRTUAL_LAYOUT: [Descriptor; 2] = [
                 execute_never: true,
             },
         },
-    }/*,
-    Descriptor {
-        virtual_range: || RangeInclusive::new(super::map::physical::PROG_START, super::map::physical::PROG_END - 1),
-        map : Mapping {
-            translation: Translation::Offset(0x100_0000),
-            attribute_fields: AttributeFields {
-                mem_attributes: MemAttributes::CacheableDRAM,
-                acc_perms: AccessPermissions::ReadWriteUser,
-                execute_never: false,
-            },
-        },
-    }*/
+    }
 ];

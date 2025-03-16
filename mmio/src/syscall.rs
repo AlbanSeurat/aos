@@ -25,5 +25,11 @@ impl SysCall {
         }
     }
 
+    pub fn sleep(&self, ms: u64) {
+        unsafe {
+            asm!("SVC 3", in("x0") ms);
+        }
+    }
+
 
 }

@@ -1,27 +1,25 @@
-global_asm!(include_str!("context.S"));
-use alloc::vec::Vec;
+global_asm!(include_str!("context.S"));use alloc::vec::Vec;
 use core::borrow::Borrow;
 
-use aarch64_cpu::asm;
 use aarch64_cpu::registers::{ELR_EL1, SP_EL0, SPSR_EL1, SP, Writeable};
 
 use shared::exceptions::handlers::GPR;
 
-use shared::memory::mmu::{ArchTranslationTable, setup_dyn_user_tables, switch_user_tables, VIRTUAL_ADDR_START};
-use shared::memory::mapping::Descriptor;
+use shared::memory::mmu::{ArchTranslationTable, setup_dyn_user_tables, switch_user_tables};
 use crate::scheduler::PROG_START;
 use crate::scheduler::process::ProcessState::{Sleep, Running};
 use crate::global::{SCHEDULER};
 use core::fmt::{Debug, Formatter};
 use core::{fmt};
 use core::arch::global_asm;
+use shared::memory::mapping::Descriptor;
 
 extern "C" {
     fn __restore_and_eret(regs: usize) -> !;
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Copy, Clone)]
 pub struct ProcessContext {
     pub(crate) regs: GPR,
     pub(crate) state: u64,
@@ -51,12 +49,15 @@ impl Default for ProcessContext {
     }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Copy, Clone)]
 pub enum ProcessState {
+    NotRunnable,
     Running,
     Sleep,
 }
 
+
+#[derive(Copy, Clone)]
 pub struct Process {
     pub tlb: ArchTranslationTable,
     pub pid: u16,
@@ -91,21 +92,11 @@ impl Process {
         print!("MMU Program mapping : \n{}", self.tlb);
     }
 
-    pub fn run(&mut self) {
-        self.state = Running;
-        println!("START PROCESS PID {} at {:x}", self.pid, PROG_START as u64);
-        SP_EL0.set(0x0040_0000);
-        // Indicate that we "return" to EL0
-        SPSR_EL1.write(SPSR_EL1::M::EL0t);
-        ELR_EL1.set(PROG_START as u64);
-        asm::eret();
-    }
-
     pub fn is_running(&self) -> bool {
         self.state == Running
     }
 
-    pub fn sleep(&mut self, gpr: &GPR, state: u64, eret_addr: u64, stack: u64) {
+    pub fn pause(&mut self, gpr: &GPR, state: u64, eret_addr: u64, stack: u64) {
         if self.state == Running {
             self.state = Sleep;
             self.context = ProcessContext::new(*gpr, state, eret_addr, stack);
@@ -124,17 +115,10 @@ impl Process {
     }
 }
 
-pub(crate) fn create_tmp_init_program() -> &'static mut Process {
-    let process = unsafe { SCHEDULER.create_process() };
-    let bytes = include_bytes!("../../../program.img");
-    unsafe { core::ptr::copy(bytes as *const u8, PROG_START as *mut u8, bytes.len()) };
-    process
+pub(crate) fn create_tmp_init_program() {
+    unsafe { SCHEDULER.create_process(include_bytes!("../../../program.img")) };
 }
 
-pub(crate) fn create_init_program() -> &'static mut Process {
-    let process = unsafe { SCHEDULER.create_process() };
-    let bytes = include_bytes!("../../../init.img");
-    unsafe { core::ptr::copy(bytes as *const u8, PROG_START as *mut u8, bytes.len()) };
-    //process.run();
-    process
+pub(crate) fn create_init_program() {
+    unsafe { SCHEDULER.create_process(include_bytes!("../../../init.img")) };
 }

@@ -5,6 +5,7 @@ use crate::memory::mair;
 use crate::memory::translate::{Granule512MiB, TranslationGranule};
 use crate::memory::pages::FixedSizeTranslationTable;
 use core::slice::Iter;
+use mmio::print;
 
 /// This constant is the power-of-two exponent that defines the virtual address space size.
 ///
@@ -85,30 +86,29 @@ pub fn setup_user_tables(descriptors: &[Descriptor]) -> Result<(), &'static str>
     Ok(())
 }
 
-pub fn setup_dyn_user_tables(descriptors: &Iter<Descriptor>, tables: &mut ArchTranslationTable, pid: u16)
-                             -> Result<(), &'static str> {
+pub fn setup_dyn_user_tables(descriptors: &Iter<Descriptor>, tables: &mut ArchTranslationTable, pid: u16) {
     tables.map_descriptors(descriptors);
     TTBR0_EL1.write(TTBR0_EL1::ASID.val(pid as u64) + TTBR0_EL1::BADDR.val(tables.phys_base_addr() as u64 >> 1));
-    unsafe { memory_flush(); }
-    Ok(())
+    memory_flush();
+    print!("MMU Program mapping at address {:#}: \n{}", tables.phys_base_addr(), tables);
 }
 
-pub fn switch_user_tables(pid: u16, base_addr : u64) -> Result<(), &'static str> {
-    unsafe { memory_flush(); }
+pub fn switch_user_tables(pid: u16, base_addr : u64) {
+    memory_flush();
     TTBR0_EL1.write(TTBR0_EL1::ASID.val(pid as u64) + TTBR0_EL1::BADDR.val(base_addr >> 1));
-    unsafe { memory_flush(); }
-    Ok(())
+    memory_flush();
 }
 
-unsafe fn memory_flush() -> Result<(), &'static str> {
+fn memory_flush() {
     barrier::dsb(barrier::ISHST);
-    asm!("TLBI VMALLE1IS");
+    unsafe {
+        asm!("TLBI VMALLE1IS");
+    }
     barrier::dsb(barrier::ISH);
     barrier::isb(barrier::SY);
-    for i in 1..10 {
+    for _i in 1..10 {
         asm::nop()
     }
-    Ok(())
 }
 
 pub unsafe fn kernel_tables() -> &'static ArchTranslationTable {

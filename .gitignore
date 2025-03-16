@@ -112,3 +112,5 @@ dkms.conf
 .DS_Store
 /xbuild_sysroot/
 target/
+
+.direnv

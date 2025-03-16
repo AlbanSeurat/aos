@@ -32,11 +32,13 @@ pub unsafe extern "C" fn _main() -> () {
 
     println!("show a message using SVC call");
 
+    let sys_call = SysCall {};
     let mut count:u128 = 0;
     loop {
-        if count % 10000 == 0 {
+        if count % 100000000 == 0 {
             println!("current stack pointer {:x}", SP.get());
             println!("show string from time to time {}", count);
+            sys_call.sleep(1000);
         }
         count = count + 1;
     }
